@@ -4,18 +4,19 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async updatePassword(userId: string, newPassword: string) {
-    return this.prisma.user.update({
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.prisma.user.update({
       where: { id: userId },
       data: {
-        password: newPassword,
+        password: hashedPassword,
         mustChangePassword: false,
+        updatedAt: new Date(),
       },
     });
   }

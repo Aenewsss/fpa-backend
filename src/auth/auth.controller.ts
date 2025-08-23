@@ -9,7 +9,7 @@ import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('login')
   @ApiOperation({ summary: 'Login com email e senha' })
