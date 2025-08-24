@@ -9,6 +9,7 @@ import { CategoryModule } from './category/category.module';
 import { TagModule } from './tags/tags.module';
 import { PostsModule } from './posts/posts.module';
 import { BannersModule } from './banners/banners.module';
+import { WebstoriesModule } from './webstories/webstories.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { BannersModule } from './banners/banners.module';
     CategoryModule,
     TagModule,
     PostsModule,
-    BannersModule
+    BannersModule,
+    WebstoriesModule
   ],
   controllers: [AppController],
   providers: [AppService],
