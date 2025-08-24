@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tags/tags.module';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { TagModule } from './tags/tags.module';
     AuthModule,
     UsersModule,
     CategoryModule,
-    TagModule
+    TagModule,
+    PostsModule
   ],
   controllers: [AppController],
   providers: [AppService],

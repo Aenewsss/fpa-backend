@@ -73,6 +73,8 @@ model Post {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  removed Boolean @default(false)
 }
 
 model Category {

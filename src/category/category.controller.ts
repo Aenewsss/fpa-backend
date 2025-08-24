@@ -12,7 +12,7 @@ import { StandardResponse } from 'src/common/interfaces/standard-response.interf
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
-@ApiTags('category')
+@ApiTags('Categories')
 @Controller('category')
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) { }
