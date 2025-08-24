@@ -7,6 +7,7 @@ import { StandardResponse } from 'src/common/interfaces/standard-response.interf
 import { DashboardService } from './dashboard.service';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { DashboardTotalCountsDto } from './dto/dashboard-total-counts.dto';
 
 @ApiTags('Dashboard')
 @Controller('dashboard')
@@ -34,6 +35,20 @@ export class DashboardController {
         return {
             data: result,
             message: ResponseMessageEnum.DASHBOARD_CONTENT_OVERVIEW_FETCHED
+        }
+    }
+
+    @Get("totals")
+    @ApiOperation({ summary: "Get total counts of dashboard items" })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
+    async getDashboardTotals(): Promise<StandardResponse<DashboardTotalCountsDto>> {
+        const data = await this.dashboardService.getDashboardTotals()
+
+        return {
+            message: ResponseMessageEnum.DASHBOARD_TOTALS_RETRIEVED,
+            data,
         }
     }
 }
