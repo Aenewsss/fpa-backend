@@ -1,40 +1,102 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-}
-
-enum Role {
-    ADMIN
-    MAIN_EDITOR
-    EDITOR
-    READER
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-    id                 String   @id @default(uuid())
-    firstName          String
-    lastName           String
-    email              String   @unique
-    password           String
-    role               Role     @default(EDITOR)
-    jobRole            String
-    mustChangePassword Boolean  @default(false)
-    createdAt          DateTime @default(now())
-    updatedAt          DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  password           String
+  role               Role     @default(EDITOR)
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  firstName          String
+  lastName           String
+  jobRole            String?
+  Post               Post[]
 }
 
 model UserInvited {
-    id              String    @id @default(uuid())
-    email           String    @unique
-    invitationToken String    @unique
-    status          String    @default("pending") // "pending" | "accepted"
-    invitedAt       DateTime  @default(now())
-    used            Boolean   @default(false)
-    expiresAt       DateTime
-    role            Role
-    acceptedAt      DateTime?
+  id              String    @id @default(uuid())
+  email           String    @unique
+  invitationToken String    @unique
+  status          String    @default("pending")
+  invitedAt       DateTime  @default(now())
+  used            Boolean   @default(false)
+  expiresAt       DateTime
+  role            String?
+  acceptedAt      DateTime? @db.Timestamp(6)
+}
+
+enum Role {
+  ADMIN
+  MAIN_EDITOR
+  EDITOR
+  READER
+}
+
+enum PostStatus {
+  revision
+  posted
+  removed
+}
+
+model Post {
+  id            String     @id @default(uuid())
+  postTitle     String
+  postContent   String // HTML (com imagens embedadas ou URLs)
+  postDate      DateTime   @default(now())
+  postAuthorId  String
+  postAuthor    User       @relation(fields: [postAuthorId], references: [id])
+  postStatus    PostStatus
+  commentCounts Int        @default(0)
+
+  postParentId String?
+  postParent   Post?   @relation("PostToParent", fields: [postParentId], references: [id])
+  children     Post[]  @relation("PostToParent")
+
+  postCategoryId String
+  postCategory   Category @relation("PostCategory", fields: [postCategoryId], references: [id])
+
+  relatedTags  Tag[]   @relation("PostTags")
+  thumbnailUrl String?
+  slug         String  @unique
+  summary      String?
+  isFeatured   Boolean @default(false)
+  viewCount    Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  iconUrl     String?
+  order       Int        @default(0)
+  isVisible   Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  posts       Post[]     @relation("PostCategory")
+  removed     Boolean    @default(false)
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  removed   Boolean  @default(false)
+  posts     Post[]   @relation("PostTags")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
