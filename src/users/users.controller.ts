@@ -2,8 +2,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +20,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserRole } from 'src/auth/decorators/user-role.decorator';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -39,5 +43,27 @@ export class UsersController {
       data: null,
       message: ResponseMessageEnum.USER_INVITED_SUCCESSFULLY
     }
+  }
+
+  @Delete(':id')
+  @Roles(UserRoleEnum.ADMIN)
+  @ApiOperation({ summary: 'Deleta um usuário (soft delete)' })
+  async softDeleteUser(@Param('id') id: string): Promise<StandardResponse> {
+    const result = await this.usersService.softDeleteUser(id);
+    return {
+      data: result,
+      message: ResponseMessageEnum.USER_DELETED_SUCCESSFULLY,
+    };
+  }
+
+  @Get()
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+  @ApiOperation({ summary: 'List users with pagination and optional search' })
+  async listUsers(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
+    const result = await this.usersService.listUsers(query);
+    return {
+      data: result,
+      message: ResponseMessageEnum.LIST_USERS_SUCCESSFULLY,
+    };
   }
 }

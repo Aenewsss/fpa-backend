@@ -1,5 +1,5 @@
 // src/users/users.service.ts
-import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
@@ -8,7 +8,8 @@ import { RedisService } from 'src/redis/redis.service';
 import { randomUUID } from 'crypto';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { CreateUserInput } from './input/create-user-invite.input';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @Injectable()
 export class UsersService {
@@ -83,5 +84,57 @@ export class UsersService {
         jobRole
       },
     });
+  }
+
+  async softDeleteUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || user.removed) throw new NotFoundException(ResponseMessageEnum.USER_NOT_FOUND);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        removed: true,
+      },
+    });
+  }
+
+  async listUsers(query: PaginationQueryDto) {
+    const { page = 1, limit = 10, search } = query;
+
+    const where: Prisma.UserWhereInput = {
+      removed: false,
+      ...(search && {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      total,
+      page,
+      limit,
+      users,
+    };
   }
 }

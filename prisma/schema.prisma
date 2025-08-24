@@ -19,6 +19,7 @@ model User {
   lastName           String
   jobRole            String?
   Post               Post[]
+  removed            Boolean  @default(false)
 }
 
 model UserInvited {
