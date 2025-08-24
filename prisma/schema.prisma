@@ -45,6 +45,7 @@ enum PostStatus {
   revision
   posted
   removed
+  draft
 }
 
 model Post {

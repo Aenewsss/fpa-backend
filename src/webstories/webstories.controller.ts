@@ -14,7 +14,6 @@ import { StandardResponse } from 'src/common/interfaces/standard-response.interf
 
 @ApiTags('Webstories')
 @Controller('webstories')
-@ApiBearerAuth()
 export class WebstoriesController {
     constructor(
         private readonly service: WebstoriesService,
@@ -22,6 +21,7 @@ export class WebstoriesController {
     ) { }
 
     @Post()
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new webstory' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
@@ -61,22 +61,22 @@ export class WebstoriesController {
         },
     })
     async create(
-        @UploadedFiles(new ParseFilePipe({ validators: [new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 })] }))
-        files: Express.Multer.File[],
+        @UploadedFiles(new ParseFilePipe())
+        files: any,
         @Body() dto: any
     ): Promise<StandardResponse> {
-        const videoFile = files.find(f => f.mimetype.startsWith('video/'));
-        const imageFile = files.find(f => f.mimetype.startsWith('image/'));
+        const videoFile = files.videoFile.find(f => f.mimetype.startsWith('video/'));
+        const coverFile = files.coverFile?.find(f => f.mimetype.startsWith('image/'));
 
         if (!videoFile) throw new Error(ResponseMessageEnum.VIDEO_FILE_REQUIRED);
 
         const uploadedVideo = await this.uploadService.upload(videoFile, BucketPrefixEnum.WEBSTORIES_VIDEO);
         dto.videoUrl = uploadedVideo.url;
 
-        if (imageFile) {
-            const uploadedImage = await this.uploadService.upload(imageFile, BucketPrefixEnum.WEBSTORIES_COVER);
+        if (coverFile) {
+            const uploadedImage = await this.uploadService.upload(coverFile, BucketPrefixEnum.WEBSTORIES_COVER);
             dto.coverImageUrl = uploadedImage.url;
-        }
+        } else delete dto.coverFile
 
         if (uploadedVideo.duplicated) {
             return {
@@ -121,6 +121,7 @@ export class WebstoriesController {
     @ApiOperation({ summary: 'Soft delete a webstory' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
+    @ApiBearerAuth()
     async remove(@Param('id') id: string): Promise<StandardResponse> {
         const result = await this.service.remove(id)
         return {

@@ -10,6 +10,7 @@ import { TagModule } from './tags/tags.module';
 import { PostsModule } from './posts/posts.module';
 import { BannersModule } from './banners/banners.module';
 import { WebstoriesModule } from './webstories/webstories.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { WebstoriesModule } from './webstories/webstories.module';
     TagModule,
     PostsModule,
     BannersModule,
-    WebstoriesModule
+    WebstoriesModule,
+    DashboardModule
   ],
   controllers: [AppController],
   providers: [AppService],

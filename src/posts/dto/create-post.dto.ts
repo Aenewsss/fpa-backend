@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsUrl, IsUUID, IsArray, ArrayNotEmpty, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsUrl, IsUUID, IsArray, ArrayNotEmpty, IsInt, Min, IsEmpty } from 'class-validator';
 import { PostStatus } from '@prisma/client';
+import { Transform } from 'class-transformer';
 
 export class CreatePostDto {
     @ApiProperty()
@@ -24,6 +25,7 @@ export class CreatePostDto {
     @ApiPropertyOptional()
     @IsUUID()
     @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
     postParentId?: string;
 
     @ApiProperty()
@@ -32,9 +34,10 @@ export class CreatePostDto {
 
     @ApiProperty({ type: [String], description: 'IDs das tags relacionadas' })
     @IsArray()
-    @ArrayNotEmpty()
+    @IsOptional()
     @IsUUID('all', { each: true })
-    relatedTags: string[];
+    @Transform(({ value }) => typeof value === 'string' ? value.split(',').map(v => v.trim()) : value)
+    relatedTags?: string[];
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -54,17 +57,20 @@ export class CreatePostDto {
     @ApiPropertyOptional()
     @IsOptional()
     @IsBoolean()
+    @Transform(({ value }) => value === 'true')
     isFeatured?: boolean = false;
 
     @ApiPropertyOptional()
     @IsOptional()
     @IsInt()
     @Min(0)
+    @Transform(({ value }) => parseInt(value))
     viewCount?: number = 0;
 
     @IsArray()
-    @ArrayNotEmpty()
+    @IsOptional()
     @IsUUID('all', { each: true })
     @ApiProperty({ type: [String], description: 'IDs das tags relacionadas' })
-    tagIds: string[];
+    @Transform(({ value }) => typeof value === 'string' ? value.split(',').map(v => v.trim()) : value)
+    tagIds?: string[];
 }

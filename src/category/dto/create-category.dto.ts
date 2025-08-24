@@ -20,10 +20,10 @@ export class CreateCategoryDto {
     @IsString()
     parentId?: string;
 
-    @ApiProperty({ description: 'URL do ícone da categoria', required: false })
-    @IsOptional()
-    @IsUrl()
-    iconUrl?: string;
+    // @ApiProperty({ description: 'URL do ícone da categoria', required: false })
+    // @IsOptional()
+    // @IsUrl()
+    // iconUrl?: string;
 
     @ApiProperty({ description: 'Ordem de exibição da categoria', required: false, default: 0 })
     @IsOptional()
