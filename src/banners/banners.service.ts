@@ -9,7 +9,18 @@ export class BannersService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreateBannerDto) {
-        return this.prisma.banner.create({ data: dto });
+        const lastBanner = await this.prisma.banner.findFirst({
+            orderBy: { order: 'desc' },
+        });
+
+        const nextOrder = (lastBanner?.order ?? 0) + 1;
+
+        return this.prisma.banner.create({
+            data: {
+                ...dto,
+                order: nextOrder,
+            },
+        });
     }
 
     async findAll() {
@@ -39,10 +50,34 @@ export class BannersService {
     }
 
     async reorder(id: string, newOrder: number) {
-        await this.findOne(id);
+        const banner = await this.findOne(id);
+        const currentOrder = banner.order;
+
+        if (currentOrder === newOrder) return banner;
+
+        const isMovingDown = newOrder > currentOrder;
+
+        // Atualiza os banners entre a posição atual e a nova
+        await this.prisma.banner.updateMany({
+            where: {
+                removed: false,
+                id: { not: id },
+                order: {
+                    gte: isMovingDown ? Number(currentOrder) + 1 : Number(newOrder),
+                    lte: isMovingDown ? Number(newOrder) : Number(currentOrder) - 1,
+                },
+            },
+            data: {
+                order: {
+                    increment: isMovingDown ? -1 : 1,
+                },
+            },
+        });
+
+        // Atualiza o banner desejado
         return this.prisma.banner.update({
             where: { id },
-            data: { order: newOrder },
+            data: { order: Number(newOrder) },
         });
     }
 }

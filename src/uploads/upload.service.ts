@@ -1,8 +1,10 @@
 // src/uploads/upload-r2.service.ts
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
+import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 
 @Injectable()
 export class UploadService {
@@ -12,7 +14,7 @@ export class UploadService {
     constructor() {
         this.s3 = new S3Client({
             region: 'auto',
-            endpoint: process.env.R2_ENDPOINT, // ex: https://<account>.r2.cloudflarestorage.com
+            endpoint: process.env.R2_ENDPOINT,
             credentials: {
                 accessKeyId: process.env.R2_ACCESS_KEY!,
                 secretAccessKey: process.env.R2_SECRET_KEY!,
@@ -22,33 +24,61 @@ export class UploadService {
         this.bucket = process.env.R2_BUCKET!;
     }
 
-    async upload(file: Express.Multer.File, pathPrefix = 'uploads') {
+    async upload(file: Express.Multer.File, pathPrefix: BucketPrefixEnum) {
         const extension = extname(file.originalname);
-        const uuid = randomUUID();
-
-        const filename = `${uuid}${extension}`;
+        const hash = createHash('sha256').update(file.buffer).digest('hex');
+        const filename = `${hash}${extension}`;
         const key = `${pathPrefix}/${filename}`;
 
         try {
+            // Verifica se o arquivo já existe
             await this.s3.send(
-                new PutObjectCommand({
+                new HeadObjectCommand({
                     Bucket: this.bucket,
                     Key: key,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
                 }),
             );
 
+            // Se não lançar erro, significa que o objeto já existe
             const publicUrl = `${process.env.R2_PUBLIC_BASE_URL}/${key}`;
             return {
                 url: publicUrl,
                 key,
                 size: file.size,
                 contentType: file.mimetype,
+                duplicated: true,
             };
         } catch (err) {
-            console.error('[R2 Upload Error]', err);
-            throw new InternalServerErrorException('Erro ao enviar para o R2');
+            // Se for erro diferente de NotFound, repropaga
+            if (err?.$metadata?.httpStatusCode !== 404) {
+                console.error('[R2 HeadObject Error]', err);
+                throw new InternalServerErrorException(ResponseMessageEnum.ERROR_VERIFYING_FILE);
+            }
+
+            // Arquivo ainda não existe, pode fazer o upload
+            try {
+                await this.s3.send(
+                    new PutObjectCommand({
+                        Bucket: this.bucket,
+                        Key: key,
+                        Body: file.buffer,
+                        ContentType: file.mimetype,
+                        CacheControl: 'public, max-age=31536000', // cache por 1 ano
+                    }),
+                );
+
+                const publicUrl = `${process.env.R2_PUBLIC_BASE_URL}/${key}`;
+                return {
+                    url: publicUrl,
+                    key,
+                    size: file.size,
+                    contentType: file.mimetype,
+                    duplicated: false,
+                };
+            } catch (uploadErr) {
+                console.error('[R2 Upload Error]', uploadErr);
+                throw new InternalServerErrorException(ResponseMessageEnum.ERROR_TO_UPLOAD_FILE);
+            }
         }
     }
 }

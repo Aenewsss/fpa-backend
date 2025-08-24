@@ -13,6 +13,7 @@ import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
+import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -93,6 +94,6 @@ export class PostsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)
     async uploadFile(@UploadedFile() file: Express.Multer.File) {
-        return this.uploadsService.upload(file);
+        return this.uploadsService.upload(file, BucketPrefixEnum.POSTS);
     }
 }

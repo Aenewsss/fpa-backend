@@ -5,7 +5,8 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateBannerDto {
     @ApiProperty()
     @IsString()
-    imageUrl: string;
+    @IsOptional()
+    imageUrl: any;
 
     @ApiProperty({ required: false })
     @IsOptional()
