@@ -7,6 +7,8 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
+import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 
 @ApiTags('Tags')
 @Controller('tags')
@@ -19,20 +21,32 @@ export class TagsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
-    create(@Body() dto: CreateTagDto) {
-        return this.tagsService.create(dto);
+    async create(@Body() dto: CreateTagDto): Promise<StandardResponse> {
+        const result = await this.tagsService.create(dto);
+        return {
+            message: ResponseMessageEnum.TAG_CREATED_SUCCESSFULLY,
+            data: result
+        }
     }
 
     @Get()
     @ApiOperation({ summary: 'Listar todas as tags' })
-    findAll() {
-        return this.tagsService.findAll();
+    async findAll(): Promise<StandardResponse> {
+        const result = await this.tagsService.findAll();
+        return {
+            message: ResponseMessageEnum.TAGS_LISTED_SUCCESSFULLY,
+            data: result
+        }
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Buscar uma tag por ID' })
-    findOne(@Param('id') id: string) {
-        return this.tagsService.findOne(id);
+    async findOne(@Param('id') id: string): Promise<StandardResponse> {
+        const result = await this.tagsService.findOne(id);
+        return {
+            message: ResponseMessageEnum.TAG_LISTED_SUCCESSFULLY,
+            data: result
+        }
     }
 
     @Patch(':id')
@@ -40,8 +54,12 @@ export class TagsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
-    update(@Param('id') id: string, @Body() dto: UpdateTagDto) {
-        return this.tagsService.update(id, dto);
+    async update(@Param('id') id: string, @Body() dto: UpdateTagDto): Promise<StandardResponse> {
+        const result = await this.tagsService.update(id, dto);
+        return {
+            message: ResponseMessageEnum.TAG_UPDATED_SUCCESSFULLY,
+            data: result
+        }
     }
 
     @Delete(':id')
@@ -49,7 +67,11 @@ export class TagsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
-    remove(@Param('id') id: string) {
-        return this.tagsService.remove(id);
+    async remove(@Param('id') id: string): Promise<StandardResponse> {
+        const result = await this.tagsService.remove(id);
+        return {
+            message: ResponseMessageEnum.TAG_DELETED_SUCCESSFULLY,
+            data: result
+        }
     }
 }

@@ -8,6 +8,8 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
+import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
+import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 
 @ApiTags('category')
 @Controller('category')
@@ -19,20 +21,32 @@ export class CategoryController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
     @ApiBearerAuth()
-    create(@Body() dto: CreateCategoryDto) {
-        return this.categoryService.create(dto);
+    async create(@Body() dto: CreateCategoryDto): Promise<StandardResponse> {
+        const result = await this.categoryService.create(dto);
+        return {
+            data: result,
+            message: ResponseMessageEnum.CATEGORY_CREATED_SUCCESSFULLY
+        }
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'List one category' })
-    findOne(@Param('id') id: string) {
-        return this.categoryService.findOne(id);
+    async findOne(@Param('id') id: string): Promise<StandardResponse> {
+        const result = await this.categoryService.findOne(id)
+        return {
+            data: result,
+            message: ResponseMessageEnum.CATEGORY_LISTED_SUCCESSFULLY
+        }
     }
 
     @Get()
     @ApiOperation({ summary: 'List all category' })
-    findAll() {
-        return this.categoryService.findAll();
+    async findAll(): Promise<StandardResponse> {
+        const result = await this.categoryService.findAll();
+        return {
+            data: result,
+            message: ResponseMessageEnum.CATEGORIES_LISTED_SUCCESSFULLY
+        }
     }
 
     @Patch(':id')
@@ -40,8 +54,12 @@ export class CategoryController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
     @ApiBearerAuth()
-    update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
-        return this.categoryService.update(id, dto);
+    async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto): Promise<StandardResponse> {
+        const result = await this.categoryService.update(id, dto)
+        return {
+            data: result,
+            message: ResponseMessageEnum.CATEGORY_UPDATED_SUCCESSFULLY
+        }
     }
 
     @Delete(':id')
@@ -49,7 +67,11 @@ export class CategoryController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
     @ApiBearerAuth()
-    remove(@Param('id') id: string) {
-        return this.categoryService.remove(id);
+    async remove(@Param('id') id: string): Promise<StandardResponse> {
+        const result = await this.categoryService.remove(id)
+        return {
+            data: result,
+            message: ResponseMessageEnum.CATEGORY_DELETED_SUCCESSFULLY
+        }
     }
 }
