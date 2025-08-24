@@ -1,8 +1,8 @@
 // auth.controller.ts
-import { Controller, Post, Body, Patch, UseGuards, Req, UnauthorizedException, Delete, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Patch, UseGuards, Req, UnauthorizedException, Delete, Headers, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -11,6 +11,8 @@ import { UsersService } from 'src/users/users.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserId } from './decorators/user-id.decorator';
+import { ValidateInviteDto } from './dto/validate-invite.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -63,7 +65,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout do usuário (invalida o token atual)' })
-  async logout(@Req() req: Request) {
+  async logout(@Req() req: Request): Promise<StandardResponse> {
     const authHeader = req.headers['authorization'];
     const token = authHeader?.split(' ')[1];
 
@@ -72,6 +74,30 @@ export class AuthController {
     await this.authService.logout(token);
     return {
       message: ResponseMessageEnum.LOGOUT_SUCCESSFULLY,
+      data: null
+    };
+  }
+
+  @Get('invite/validate')
+  @ApiOperation({ summary: 'Valida token de convite' })
+  @ApiQuery({ name: 'invitationToken', type: String, required: true, description: 'Token de convite enviado por e-mail' })
+  async validateInvite(@Query() query: ValidateInviteDto) {
+    const data = await this.authService.validateInviteToken(query.invitationToken);
+    return {
+      message: ResponseMessageEnum.INVITE_TOKEN_VALID,
+      data,
+    };
+  }
+
+  @Post('invite/accept')
+  @ApiOperation({ summary: 'Aceita convite e cria conta' })
+  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Token inválido ou senhas não conferem' })
+  async acceptInvite(@Body() dto: AcceptInviteDto) {
+    const result = await this.authService.acceptInvite(dto);
+    return {
+      message: ResponseMessageEnum.USER_CREATED,
+      data: result,
     };
   }
 }

@@ -9,6 +9,9 @@ import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as jwt from 'jsonwebtoken';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UserRoleEnum } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private redisService: RedisService,
     private mailService: MailService,
+    private prisma: PrismaService,
   ) { }
 
   async validateUser(email: string, password: string) {
@@ -43,7 +47,6 @@ export class AuthService {
       mustChangePassword: user.mustChangePassword,
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
         role: user.role,
       },
@@ -101,5 +104,63 @@ export class AuthService {
     if (ttl > 0) {
       await this.redisService.blacklistToken(token, ttl);
     }
+  }
+
+  async validateInviteToken(invitationToken: string) {
+    const invite = await this.checkInvitationToken(invitationToken)
+
+    return {
+      email: invite.email,
+      role: invite.role,
+    };
+  }
+
+  async acceptInvite(dto: AcceptInviteDto) {
+    const { invitationToken, password, repeatPassword, firstName, lastName } = dto;
+
+    if (password !== repeatPassword) throw new BadRequestException(ResponseMessageEnum.PASSWORD_CONFIRMATION_MISMATCH);
+
+    const userInvited = await this.checkInvitationToken(invitationToken)
+
+    const existingUser = await this.usersService.findByEmail(userInvited.email);
+    if (existingUser) throw new BadRequestException(ResponseMessageEnum.USER_ALREADY_EXISTS);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.usersService.createUserFromInvite({
+      email: userInvited.email,
+      password: hashedPassword,
+      role: userInvited.role as UserRoleEnum,
+      firstName,
+      lastName,
+    });
+
+    await this.prisma.userInvited.update({
+      where: { invitationToken },
+      data: {
+        used: true,
+        status: 'accepted',
+        acceptedAt: new Date()
+      },
+    });
+
+    return {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
+  private async checkInvitationToken(invitationToken: string) {
+    const invite = await this.prisma.userInvited.findUnique({
+      where: {
+        invitationToken,
+      },
+    });
+
+    if (!invite || invite.expiresAt < new Date()) throw new BadRequestException(ResponseMessageEnum.INVALID_OR_EXPIRED_INVITATION_TOKEN);
+    if (invite.used || invite.status === 'accepted') throw new BadRequestException(ResponseMessageEnum.INVITE_ALREADY_USED);
+
+    return invite
   }
 }

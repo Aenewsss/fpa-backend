@@ -1,12 +1,13 @@
 // src/mail/mail.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import * as sgMail from '@sendgrid/mail';
 import * as sendpulse from 'sendpulse-api'
 
 @Injectable()
 export class MailService {
     private readonly logger = new Logger(MailService.name);
     private readonly TOKEN_STORAGE = '/tmp/sendpulse_token.json'; // Pode ser qualquer caminho válido no seu sistema
+    private readonly senderEmail = process.env.SENDPULSE_FROM_EMAIL!;
+    private readonly senderName = process.env.SENDPULSE_FROM_NAME || 'Sistema';
 
     constructor() {
         sendpulse.init(process.env.SENDPULSE_API_USER_ID, process.env.SENDPULSE_API_SECRET, this.TOKEN_STORAGE,
@@ -27,8 +28,8 @@ export class MailService {
             html: '',
             subject: 'Código de redefinição de senha',
             from: {
-                name: process.env.SENDPULSE_FROM_NAME || 'Sistema',
-                email: process.env.SENDPULSE_FROM_EMAIL!,
+                name: this.senderName,
+                email: this.senderEmail,
             },
             to: [
                 {
@@ -55,6 +56,38 @@ export class MailService {
                     reject(res);
                 }
             }, emailData);
+        });
+    }
+
+    async sendInvite(to: string, url: string) {
+        const emailData = {
+            template: {
+                id: process.env.SENDPULSE_TEMPLATE_ID_INVITE,
+                variables: {
+                    url, // variável do seu template
+                },
+            },
+            to: [{ email: to }],
+            from: {
+                name: this.senderName,
+                email: this.senderEmail,
+            },
+            subject: 'Convite para participar do sistema',
+        };
+
+        return new Promise<void>((resolve, reject) => {
+            sendpulse.smtpSendMail(
+                (response: any) => {
+                    if (response?.result) {
+                        this.logger.log(`Convite enviado para ${to}`);
+                        resolve();
+                    } else {
+                        this.logger.error(`Erro ao enviar convite para ${to}`, response);
+                        reject(response);
+                    }
+                },
+                emailData,
+            );
         });
     }
 }

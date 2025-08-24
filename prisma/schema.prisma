@@ -15,11 +15,24 @@ enum Role {
 
 model User {
     id                 String   @id @default(uuid())
-    name               String
+    firstName          String
+    lastName           String
     email              String   @unique
     password           String
     role               Role     @default(EDITOR)
     mustChangePassword Boolean  @default(false)
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
+}
+
+model UserInvited {
+    id              String    @id @default(uuid())
+    email           String    @unique
+    invitationToken String    @unique
+    status          String    @default("pending") // "pending" | "accepted"
+    invitedAt       DateTime  @default(now())
+    used            Boolean   @default(false)
+    expiresAt       DateTime
+    role            Role
+    acceptedAt      DateTime?
 }

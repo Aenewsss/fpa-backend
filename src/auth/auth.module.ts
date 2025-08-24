@@ -6,6 +6,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { RedisService } from 'src/redis/redis.service';
 import { MailModule } from 'src/mail/mail.module';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   imports: [
@@ -14,9 +15,9 @@ import { MailModule } from 'src/mail/mail.module';
       signOptions: { expiresIn: '1d' },
     }),
     UsersModule,
-    MailModule
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RedisService],
+  providers: [AuthService, JwtStrategy, RedisService, PrismaService],
 })
 export class AuthModule { }
