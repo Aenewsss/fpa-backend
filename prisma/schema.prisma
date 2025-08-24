@@ -125,3 +125,14 @@ model Webstory {
   updatedAt     DateTime @updatedAt
   removed       Boolean  @default(false)
 }
+
+model Relevant {
+  id            String   @id @default(uuid())
+  title         String
+  videoUrl      String
+  coverImageUrl String? // thumbnail opcional
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  removed       Boolean  @default(false)
+}
