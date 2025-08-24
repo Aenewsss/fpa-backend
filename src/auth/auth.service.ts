@@ -8,6 +8,7 @@ import { MailService } from 'src/mail/mail.service';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -88,5 +89,17 @@ export class AuthService {
     const hashed = await bcrypt.hash(newPassword, 10);
 
     await this.usersService.updatePassword(user.id, hashed);
+  }
+
+  async logout(token: string) {
+    const decoded: any = jwt.decode(token);
+    const exp = decoded?.exp;
+    if (!exp) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = exp - now;
+    if (ttl > 0) {
+      await this.redisService.blacklistToken(token, ttl);
+    }
   }
 }

@@ -1,5 +1,5 @@
 // auth.controller.ts
-import { Controller, Post, Body, Patch, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Patch, UseGuards, Req, UnauthorizedException, Delete, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -50,11 +50,28 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Trocar senha após autenticado' })
   async resetPassword(@UserId() userId: string, @Body() dto: ChangePasswordDto): Promise<StandardResponse> {
+    console.log(userId, dto)
     await this.authService.changePassword(userId, dto)
 
     return {
       data: null,
       message: ResponseMessageEnum.PASSWORD_CHANGED_SUCCESSFULLY
     }
+  }
+
+  @Delete('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout do usuário (invalida o token atual)' })
+  async logout(@Req() req: Request) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) throw new UnauthorizedException('Token não encontrado no header Authorization');
+
+    await this.authService.logout(token);
+    return {
+      message: ResponseMessageEnum.LOGOUT_SUCCESSFULLY,
+    };
   }
 }

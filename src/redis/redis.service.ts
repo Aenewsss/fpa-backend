@@ -25,4 +25,13 @@ export class RedisService {
     async deleteCode(email: string) {
         return this.redis.del(`reset:code:${email}`);
     }
+
+    async blacklistToken(token: string, ttlSeconds: number) {
+        const key = `blacklist:token:${token}`;
+        await this.redis.set(key, 'true', 'EX', ttlSeconds);
+    }
+
+    async isTokenBlacklisted(token: string): Promise<boolean> {
+        return (await this.redis.exists(`blacklist:token:${token}`) > 0);
+    }
 }
