@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tags/tags.module';
 import { PostsModule } from './posts/posts.module';
+import { BannersModule } from './banners/banners.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { PostsModule } from './posts/posts.module';
     UsersModule,
     CategoryModule,
     TagModule,
-    PostsModule
+    PostsModule,
+    BannersModule
   ],
   controllers: [AppController],
   providers: [AppService],
