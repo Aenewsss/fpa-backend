@@ -50,7 +50,7 @@ enum PostStatus {
 model Post {
   id            String     @id @default(uuid())
   postTitle     String
-  postContent   String // HTML (com imagens embedadas ou URLs)
+  postContent   Json
   postDate      DateTime   @default(now())
   postAuthorId  String
   postAuthor    User       @relation(fields: [postAuthorId], references: [id])

@@ -8,10 +8,10 @@ export class CreatePostDto {
     @IsNotEmpty()
     postTitle: string;
 
-    @ApiProperty()
-    @IsString()
+    @ApiProperty({ type: 'object', description: 'Conteúdo do post em JSON (Tiptap)', additionalProperties: true })
     @IsNotEmpty()
-    postContent: string;
+    postContent: Record<string, any>;
+
 
     @ApiProperty()
     @IsUUID()

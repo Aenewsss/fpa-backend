@@ -1,5 +1,5 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Patch, Delete, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Post, Body, UseGuards, Get, Param, Patch, Delete, Query, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -14,6 +14,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
+import { PostStatus } from '@prisma/client';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -24,14 +25,57 @@ export class PostsController {
     ) { }
 
     @Post()
-    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
     @ApiOperation({ summary: 'Create a new post' })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileInterceptor('thumbnail'))
+    @ApiBody({
+        description: 'Criar post com thumbnail',
+        schema: {
+            type: 'object',
+            properties: {
+                postTitle: { type: 'string' },
+                postContent: { type: 'object' },
+                postAuthorId: { type: 'string', format: 'uuid' },
+                postStatus: { type: 'string', enum: Object.values(PostStatus) },
+                postParentId: { type: 'string', format: 'uuid' },
+                postCategoryId: { type: 'string', format: 'uuid' },
+                relatedTags: {
+                    type: 'array',
+                    items: { type: 'string', format: 'uuid' },
+                },
+                slug: { type: 'string' },
+                summary: { type: 'string' },
+                isFeatured: { type: 'boolean' },
+                viewCount: { type: 'integer' },
+                tagIds: {
+                    type: 'array',
+                    items: { type: 'string', format: 'uuid' },
+                },
+                thumbnail: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Imagem de capa do post (até 5MB)',
+                },
+            },
+            required: ['postTitle', 'postContent', 'postAuthorId', 'postStatus', 'postCategoryId', 'slug', 'tagIds', 'relatedTags'],
+        },
+    })
     async create(
+        @UploadedFile(
+            new ParseFilePipe({ validators: [new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })] }),
+        )
+        file: Express.Multer.File,
         @Body() dto: CreatePostDto,
         @UserId() userId: string,
     ): Promise<StandardResponse> {
+        if (file) {
+            const uploaded = await this.uploadsService.upload(file, BucketPrefixEnum.POSTS);
+            dto.thumbnailUrl = uploaded.url;
+        }
+
         const result = await this.postsService.create(dto, userId);
         return {
             data: result,
