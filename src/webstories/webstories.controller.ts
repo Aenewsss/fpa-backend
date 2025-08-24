@@ -128,4 +128,17 @@ export class WebstoriesController {
             message: ResponseMessageEnum.WEBSTORY_DELETED_SUCCESSFULLY
         }
     }
+
+    @Patch(':id/reorder/:newIndex')
+    @Roles(UserRoleEnum.ADMIN)
+    @ApiOperation({ summary: 'Reorder a webstory' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    async reorder(@Param('id') id: string, @Param('newIndex') newIndex: number): Promise<StandardResponse> {
+        const result = await this.service.reorder(id, newIndex);
+        return {
+            data: result,
+            message: ResponseMessageEnum.WEBSTORY_ORDER_UPDATED,
+        };
+    }
 }

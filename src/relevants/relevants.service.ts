@@ -65,4 +65,36 @@ export class RelevantsService {
             data: { removed: true },
         });
     }
+
+    async reorder(id: string, newOrder: number) {
+        const relevant = await this.findOne(id);
+        const currentOrder = relevant.order;
+
+        if (currentOrder === newOrder) return relevant;
+
+        const isMovingDown = newOrder > currentOrder;
+
+        // Atualiza os relevants entre a posição atual e a nova
+        await this.prisma.relevant.updateMany({
+            where: {
+                removed: false,
+                id: { not: id },
+                order: {
+                    gte: isMovingDown ? Number(currentOrder) + 1 : Number(newOrder),
+                    lte: isMovingDown ? Number(newOrder) : Number(currentOrder) - 1,
+                },
+            },
+            data: {
+                order: {
+                    increment: isMovingDown ? -1 : 1,
+                },
+            },
+        });
+
+        // Atualiza o relevant desejado
+        return this.prisma.relevant.update({
+            where: { id },
+            data: { order: Number(newOrder) },
+        });
+    }
 }

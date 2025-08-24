@@ -65,4 +65,36 @@ export class WebstoriesService {
             data: { removed: true },
         });
     }
+
+    async reorder(id: string, newOrder: number) {
+        const webstory = await this.findOne(id);
+        const currentOrder = webstory.order;
+
+        if (currentOrder === newOrder) return webstory;
+
+        const isMovingDown = newOrder > currentOrder;
+
+        // Atualiza os webstorys entre a posição atual e a nova
+        await this.prisma.webstory.updateMany({
+            where: {
+                removed: false,
+                id: { not: id },
+                order: {
+                    gte: isMovingDown ? Number(currentOrder) + 1 : Number(newOrder),
+                    lte: isMovingDown ? Number(newOrder) : Number(currentOrder) - 1,
+                },
+            },
+            data: {
+                order: {
+                    increment: isMovingDown ? -1 : 1,
+                },
+            },
+        });
+
+        // Atualiza o webstory desejado
+        return this.prisma.webstory.update({
+            where: { id },
+            data: { order: Number(newOrder) },
+        });
+    }
 }
