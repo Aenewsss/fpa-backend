@@ -128,7 +128,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.usersService.createUser({
+    await this.usersService.createUser({
       email: userInvited.email,
       password: hashedPassword,
       role: userInvited.role as UserRoleEnum,
@@ -146,11 +146,7 @@ export class AuthService {
       },
     });
 
-    return {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    };
+    return await this.login(userInvited.email, hashedPassword)
   }
 
   private async checkInvitationToken(invitationToken: string) {
@@ -197,5 +193,7 @@ export class AuthService {
     });
 
     await this.redisService.deleteCode(`reader:signup:${email}`);
+
+    return await this.login(email, hashedPassword)
   }
 }

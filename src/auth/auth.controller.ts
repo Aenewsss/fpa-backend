@@ -6,8 +6,6 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from 'src/users/users.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserId } from './decorators/user-id.decorator';
@@ -115,9 +113,10 @@ export class AuthController {
   @Post('reader/signup')
   @ApiOperation({ summary: 'Cria conta de leitor com código validado' })
   async signupReader(@Body() dto: SignupReaderDto): Promise<StandardResponse> {
-    await this.authService.signupReader(dto);
+    const result = await this.authService.signupReader(dto);
+
     return {
-      data: null,
+      data: result,
       message: ResponseMessageEnum.SIGNUP_SUCCESSFULLY
     }
   }
