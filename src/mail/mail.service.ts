@@ -1,34 +1,60 @@
 // src/mail/mail.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import * as sgMail from '@sendgrid/mail';
+import * as sendpulse from 'sendpulse-api'
 
 @Injectable()
 export class MailService {
     private readonly logger = new Logger(MailService.name);
+    private readonly TOKEN_STORAGE = '/tmp/sendpulse_token.json'; // Pode ser qualquer caminho válido no seu sistema
 
     constructor() {
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+        sendpulse.init(process.env.SENDPULSE_API_USER_ID, process.env.SENDPULSE_API_SECRET, this.TOKEN_STORAGE,
+            (token) => {
+                if (token) {
+                    this.logger.log('SendPulse authenticated successfully');
+                } else {
+                    this.logger.error('SendPulse authentication failed');
+                }
+            }
+        );
     }
 
     async sendPasswordResetCode(to: string, code: string) {
-        const msg = {
-            to,
+        const url = `https://seu-dominio.com.br/primeiro-acesso?email=${encodeURIComponent(to)}&code=${code}`;
+
+        const emailData = {
+            html: '',
+            subject: 'Código de redefinição de senha',
             from: {
-                email: process.env.SENDGRID_FROM_EMAIL!,
-                name: process.env.SENDGRID_FROM_NAME || 'Sistema',
+                name: process.env.SENDPULSE_FROM_NAME || 'Sistema',
+                email: process.env.SENDPULSE_FROM_EMAIL!,
             },
-            templateId: process.env.SENDGRID_TEMPLATE_RESET_CODE_ID!,
-            dynamicTemplateData: {
-                code,
+            to: [
+                {
+                    email: to,
+                    name: to,
+                },
+            ],
+            template: {
+                id: Number(process.env.SENDPULSE_TEMPLATE_ID!),
+                variables: {
+                    code,
+                    url
+                },
             },
         };
 
-        try {
-            await sgMail.send(msg);
-            this.logger.log(`Código de redefinição enviado para ${to}`);
-        } catch (error) {
-            this.logger.error(`Erro ao enviar código para ${to}:`, error?.response?.body || error);
-            throw error;
-        }
+        return new Promise((resolve, reject) => {
+            sendpulse.smtpSendMail((res) => {
+                if (res?.result === true) {
+                    this.logger.log(`Código de redefinição enviado para ${to}`);
+                    resolve(res);
+                } else {
+                    this.logger.error(`Erro ao enviar código para ${to}:`, res);
+                    reject(res);
+                }
+            }, emailData);
+        });
     }
 }

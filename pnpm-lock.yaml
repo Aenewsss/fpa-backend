@@ -11,6 +11,9 @@ importers:
       '@nestjs/common':
         specifier: ^10.0.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^4.0.2
+        version: 4.0.2(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^10.0.0
         version: 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -62,6 +65,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sendpulse-api:
+        specifier: ^1.1.7
+        version: 1.1.7
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@4.21.2)
@@ -506,6 +512,12 @@ packages:
         optional: true
       class-validator:
         optional: true
+
+  '@nestjs/config@4.0.2':
+    resolution: {integrity: sha512-McMW6EXtpc8+CwTUwFdg6h7dYcBUpH5iUILCclAsa+MbCEvC9ZKu4dCHRlJqALuhjLw97pbQu62l4+wRwGeZqA==}
+    peerDependencies:
+      '@nestjs/common': ^10.0.0 || ^11.0.0
+      rxjs: ^7.1.0
 
   '@nestjs/core@10.4.20':
     resolution: {integrity: sha512-kRdtyKA3+Tu70N3RQ4JgmO1E3LzAMs/eppj7SfjabC7TgqNWoS4RLhWl4BqmsNVmjj6D5jgfPVtHtgYkU3AfpQ==}
@@ -1467,6 +1479,14 @@ packages:
   doctrine@3.0.0:
     resolution: {integrity: sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==}
     engines: {node: '>=6.0.0'}
+
+  dotenv-expand@12.0.1:
+    resolution: {integrity: sha512-LaKRbou8gt0RNID/9RoI+J2rvXsBRPMV7p+ElHlPhcSARbCPDYcYG2s1TIzAfWv4YSgyY5taidWzzs31lNV3yQ==}
+    engines: {node: '>=12'}
+
+  dotenv@16.4.7:
+    resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
+    engines: {node: '>=12'}
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
@@ -2997,6 +3017,9 @@ packages:
     resolution: {integrity: sha512-dW41u5VfLXu8SJh5bwRmyYUbAoSB3c9uQh6L8h/KtsFREPWpbX1lrljJo186Jc4nmci/sGUZ9a0a0J2zgfq2hw==}
     engines: {node: '>= 0.8.0'}
 
+  sendpulse-api@1.1.7:
+    resolution: {integrity: sha512-Jb/9mcMN1Cs/5iHDQ+EURXfUzhJAz3W9yeAfPnVoHhTsj2Cx9n9oqqxvwZay1kTSbweVNIrLCt12ku31IufQfw==}
+
   serialize-javascript@6.0.2:
     resolution: {integrity: sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==}
 
@@ -4070,6 +4093,14 @@ snapshots:
       class-validator: 0.14.2
     transitivePeerDependencies:
       - supports-color
+
+  '@nestjs/config@4.0.2(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      dotenv: 16.4.7
+      dotenv-expand: 12.0.1
+      lodash: 4.17.21
+      rxjs: 7.8.2
 
   '@nestjs/core@10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
@@ -5187,6 +5218,12 @@ snapshots:
   doctrine@3.0.0:
     dependencies:
       esutils: 2.0.3
+
+  dotenv-expand@12.0.1:
+    dependencies:
+      dotenv: 16.6.1
+
+  dotenv@16.4.7: {}
 
   dotenv@16.6.1: {}
 
@@ -7040,6 +7077,8 @@ snapshots:
       statuses: 2.0.1
     transitivePeerDependencies:
       - supports-color
+
+  sendpulse-api@1.1.7: {}
 
   serialize-javascript@6.0.2:
     dependencies:

@@ -9,13 +9,13 @@ export class RedisService {
     constructor() {
         this.redis = new Redis(process.env.UPSTASH_REDIS_REST_URL, {
             password: process.env.UPSTASH_REDIS_REST_TOKEN,
-            tls: {}, // necessário para REST API da Upstash
-        });
+            tls: {},
+        })
     }
 
     async setCode(email: string, code: string) {
         const key = `reset:code:${email}`;
-        await this.redis.set(key, code, 'EX', 600); // 10 min
+        await this.redis.set(key, code, 'EX', 300); // 5 min
     }
 
     async getCode(email: string) {

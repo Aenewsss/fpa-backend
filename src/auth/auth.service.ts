@@ -5,8 +5,9 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RedisService } from 'src/redis/redis.service';
 import { MailService } from 'src/mail/mail.service';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +38,7 @@ export class AuthService {
     const payload = { sub: user.id, role: user.role, email: user.email };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, { secret: process.env.JWT_SECRET, expiresIn: '1h' }),
       mustChangePassword: user.mustChangePassword,
       user: {
         id: user.id,
@@ -48,7 +49,7 @@ export class AuthService {
     };
   }
 
-  async resetPasswordWithCode(dto: ChangePasswordDto): Promise<void> {
+  async resetPasswordWithCode(dto: ResetPasswordDto): Promise<void> {
     const { email, code, newPassword, repeatNewPassword } = dto;
 
     if (newPassword !== repeatNewPassword) {
@@ -70,5 +71,22 @@ export class AuthService {
 
     await this.usersService.updatePassword(user.id, hashed);
     await this.redisService.deleteCode(email);
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    const { newPassword, repeatNewPassword } = dto;
+
+    if (newPassword !== repeatNewPassword) {
+      throw new BadRequestException(ResponseMessageEnum.PASSWORD_CONFIRMATION_MISMATCH);
+    }
+
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException(ResponseMessageEnum.USER_NOT_FOUND);
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.usersService.updatePassword(user.id, hashed);
   }
 }
