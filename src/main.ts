@@ -9,6 +9,12 @@ const PORT = 3003;
 async function bootstrap() {
   const app: INestApplication = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: [
+      'http://localhost:3000'
+    ]
+  })
+  
   // Pipes (validação global dos DTOs)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 

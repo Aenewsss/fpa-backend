@@ -42,7 +42,7 @@ export class AuthService {
       await this.mailService.sendPasswordResetCode(email, code);
     }
 
-    const payload = { sub: user.id, role: user.role, email: user.email };
+    const payload = { sub: user.id, role: user.role, email: user.email, name: `${user.firstName} ${user.lastName}` };
 
     return {
       access_token: this.jwtService.sign(payload, { secret: process.env.JWT_SECRET, expiresIn: '1h' }),

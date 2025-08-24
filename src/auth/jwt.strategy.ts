@@ -24,6 +24,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (isBlacklisted) throw new UnauthorizedException(ResponseMessageEnum.TOKEN_EXPIRED);
 
-    return { userId: payload.sub, role: payload.role, email: payload.email };
+    return { userId: payload.sub, role: payload.role, email: payload.email, name: payload.name };
   }
 }
