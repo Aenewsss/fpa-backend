@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DashboardOverviewDto } from './dto/dashboard-overview.dto';
 
 @Injectable()
 export class DashboardService {
@@ -40,5 +41,25 @@ export class DashboardService {
             webStoriesThisMonth: webStories,
             categoriesThisMonth: categories,
         };
+    }
+
+    async getContentOverview(): Promise<DashboardOverviewDto> {
+        const [publishedPosts, draftPosts, activeBanners, webStories, categories, totalTags] = await Promise.all([
+            this.prisma.post.count({ where: { postStatus: 'posted' } }),
+            this.prisma.post.count({ where: { postStatus: 'draft' } }),
+            this.prisma.banner.count({ where: { removed: false } }),
+            this.prisma.webstory.count({ where: { removed: false } }),
+            this.prisma.category.count({ where: { removed: false } }),
+            this.prisma.tag.count({}),
+        ])
+
+        return {
+            publishedPosts,
+            draftPosts,
+            activeBanners,
+            webStories,
+            categories,
+            totalTags,
+        }
     }
 }
