@@ -13,13 +13,14 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserId } from './decorators/user-id.decorator';
 import { ValidateInviteDto } from './dto/validate-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { RequestReaderCodeDto } from './dto/request-reader-code.dto';
+import { SignupReaderDto } from './dto/signup-reader.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService
   ) { }
 
   @Post('login')
@@ -81,7 +82,7 @@ export class AuthController {
   @Get('invite/validate')
   @ApiOperation({ summary: 'Valida token de convite' })
   @ApiQuery({ name: 'invitationToken', type: String, required: true, description: 'Token de convite enviado por e-mail' })
-  async validateInvite(@Query() query: ValidateInviteDto) {
+  async validateInvite(@Query() query: ValidateInviteDto): Promise<StandardResponse> {
     const data = await this.authService.validateInviteToken(query.invitationToken);
     return {
       message: ResponseMessageEnum.INVITE_TOKEN_VALID,
@@ -93,11 +94,31 @@ export class AuthController {
   @ApiOperation({ summary: 'Aceita convite e cria conta' })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Token inválido ou senhas não conferem' })
-  async acceptInvite(@Body() dto: AcceptInviteDto) {
+  async acceptInvite(@Body() dto: AcceptInviteDto): Promise<StandardResponse> {
     const result = await this.authService.acceptInvite(dto);
     return {
       message: ResponseMessageEnum.USER_CREATED,
       data: result,
     };
+  }
+
+  @Post('reader/request-code')
+  @ApiOperation({ summary: 'Solicita código de verificação para novo leitor' })
+  async requestReaderCode(@Body() dto: RequestReaderCodeDto): Promise<StandardResponse> {
+    await this.authService.sendReaderSignupCode(dto.email);
+    return {
+      data: null,
+      message: ResponseMessageEnum.SIGNUP_CODE_SENT_SUCCESSFULLY
+    }
+  }
+
+  @Post('reader/signup')
+  @ApiOperation({ summary: 'Cria conta de leitor com código validado' })
+  async signupReader(@Body() dto: SignupReaderDto): Promise<StandardResponse> {
+    await this.authService.signupReader(dto);
+    return {
+      data: null,
+      message: ResponseMessageEnum.SIGNUP_SUCCESSFULLY
+    }
   }
 }

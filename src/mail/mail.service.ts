@@ -90,4 +90,31 @@ export class MailService {
             );
         });
     }
+
+    async sendReaderSignupCode(to: string, code: string) {
+        const url = `${process.env.READER_VERIFY_URL}?email=${encodeURIComponent(to)}&code=${code}`;
+
+        return new Promise<void>((resolve, reject) => {
+            sendpulse.smtpSendMail(
+                (response: any) => {
+                    if (response?.result) {
+                        this.logger.log(`Convite enviado para ${to}`);
+                        resolve();
+                    } else {
+                        this.logger.error(`Erro ao enviar convite para ${to}`, response);
+                        reject(response);
+                    }
+                },
+                {
+                    from: {
+                        name: this.senderName,
+                        email: this.senderEmail,
+                    },
+                    to: [{ email: to }],
+                    subject: 'Código de verificação',
+                    html: `<p>Seu código de verificação é: <strong>${code}</strong></p><p>Ou clique <a href="${url}">aqui</a> para acessar diretamente.</p>`,
+                },
+            );
+        });
+    }
 }

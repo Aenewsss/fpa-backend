@@ -7,7 +7,8 @@ import { MailService } from 'src/mail/mail.service';
 import { RedisService } from 'src/redis/redis.service';
 import { randomUUID } from 'crypto';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
-import { CreateUserFromInviteInput } from './input/create-user-invite.input';
+import { CreateUserInput } from './input/create-user-invite.input';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -60,7 +61,7 @@ export class UsersService {
         invitationToken,
         status: 'pending',
         expiresAt,
-        role
+        role: role as Role
       },
     });
 
@@ -68,17 +69,18 @@ export class UsersService {
     await this.mailService.sendInvite(email, url);
   }
 
-  async createUserFromInvite(input: CreateUserFromInviteInput) {
-    const { email, password, role, firstName, lastName } = input;
+  async createUser(input: CreateUserInput) {
+    const { jobRole, email, password, role, firstName, lastName } = input;
 
     return this.prisma.user.create({
       data: {
         email,
         password,
-        role,
+        role: role as Role,
         mustChangePassword: false,
         firstName,
-        lastName
+        lastName,
+        jobRole
       },
     });
   }

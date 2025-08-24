@@ -21,6 +21,7 @@ async function main() {
                 password: hashed,
                 role: 'ADMIN',
                 mustChangePassword: true,
+                jobRole: ''
             },
         });
 

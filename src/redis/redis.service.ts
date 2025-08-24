@@ -17,6 +17,14 @@ export class RedisService {
         expiresIn ? await this.redis.set(key, value, 'EX', expiresIn) : await this.redis.set(key, value);
     }
 
+    async get(key: string) {
+        return this.redis.get(key)
+    }
+
+    async delete(key: string) {
+        return this.redis.del(key)
+    }
+
     async setCode(email: string, code: string) {
         const key = `reset:code:${email}`;
         await this.redis.set(key, code, 'EX', 300); // 5 min

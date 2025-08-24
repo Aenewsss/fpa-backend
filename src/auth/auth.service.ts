@@ -1,5 +1,5 @@
 // auth.service.ts
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -12,6 +12,8 @@ import * as jwt from 'jsonwebtoken';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
+import { generateSixDigitCode } from 'src/common/utils/code.util';
+import { SignupReaderDto } from './dto/signup-reader.dto';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +37,7 @@ export class AuthService {
     const user = await this.validateUser(email, password);
 
     if (user.mustChangePassword) {
-      const code = Math.floor(100000 + Math.random() * 900000).toString(); // ex: 834921
+      const code = generateSixDigitCode(); // ex: 834921
       await this.redisService.setCode(email, code);
       await this.mailService.sendPasswordResetCode(email, code);
     }
@@ -60,7 +62,6 @@ export class AuthService {
       throw new BadRequestException(ResponseMessageEnum.PASSWORD_CONFIRMATION_MISMATCH);
     }
 
-    // Verifica se o código bate com o armazenado no Redis
     const storedCode = await this.redisService.getCode(email);
     if (!storedCode || storedCode !== code) {
       throw new BadRequestException(ResponseMessageEnum.INVALID_OR_EXPIRED_CODE);
@@ -127,12 +128,13 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.usersService.createUserFromInvite({
+    const user = await this.usersService.createUser({
       email: userInvited.email,
       password: hashedPassword,
       role: userInvited.role as UserRoleEnum,
       firstName,
       lastName,
+      mustChangePassword: false
     });
 
     await this.prisma.userInvited.update({
@@ -162,5 +164,38 @@ export class AuthService {
     if (invite.used || invite.status === 'accepted') throw new BadRequestException(ResponseMessageEnum.INVITE_ALREADY_USED);
 
     return invite
+  }
+
+  async sendReaderSignupCode(email: string) {
+    const existing = await this.usersService.findByEmail(email);
+    if (existing) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_EXISTS);
+
+    const code = generateSixDigitCode();
+    await this.redisService.set(`reader:signup:${email}`, code, 600); // 10min
+
+    await this.mailService.sendReaderSignupCode(email, code);
+  }
+
+  async signupReader(dto: SignupReaderDto) {
+    const { email, code, password, repeatPassword, firstName, jobRole, lastName } = dto;
+
+    if (password !== repeatPassword) throw new BadRequestException(ResponseMessageEnum.PASSWORD_CONFIRMATION_MISMATCH);
+
+    const storedCode = await this.redisService.get(`reader:signup:${email}`);
+    if (!storedCode || storedCode !== code) throw new BadRequestException(ResponseMessageEnum.INVALID_OR_EXPIRED_CODE);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.usersService.createUser({
+      email,
+      password: hashedPassword,
+      role: UserRoleEnum.READER,
+      mustChangePassword: false,
+      firstName,
+      lastName,
+      jobRole
+    });
+
+    await this.redisService.deleteCode(`reader:signup:${email}`);
   }
 }
