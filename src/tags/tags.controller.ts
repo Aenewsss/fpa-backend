@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -9,6 +9,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('Tags')
 @Controller('tags')
@@ -31,8 +32,8 @@ export class TagsController {
 
     @Get()
     @ApiOperation({ summary: 'Listar todas as tags' })
-    async findAll(): Promise<StandardResponse> {
-        const result = await this.tagsService.findAll();
+    async findAll(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
+        const result = await this.tagsService.findAll(query);
         return {
             message: ResponseMessageEnum.TAGS_LISTED_SUCCESSFULLY,
             data: result

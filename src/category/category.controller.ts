@@ -1,5 +1,5 @@
 // src/category/category.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -10,6 +10,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('category')
 @Controller('category')
@@ -41,8 +42,8 @@ export class CategoryController {
 
     @Get()
     @ApiOperation({ summary: 'List all category' })
-    async findAll(): Promise<StandardResponse> {
-        const result = await this.categoryService.findAll();
+    async findAll(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
+        const result = await this.categoryService.findAll(query);
         return {
             data: result,
             message: ResponseMessageEnum.CATEGORIES_LISTED_SUCCESSFULLY
