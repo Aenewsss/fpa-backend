@@ -16,6 +16,7 @@ export class CreatePostDto {
 
     @ApiProperty()
     @IsUUID()
+    @IsOptional()
     postAuthorId: string;
 
     @ApiProperty({ enum: PostStatus })

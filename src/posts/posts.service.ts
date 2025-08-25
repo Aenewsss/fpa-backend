@@ -55,28 +55,19 @@ export class PostsService {
             postStatus: { not: 'removed' },
         };
 
-        const [posts, total] = await this.prisma.$transaction([
-            this.prisma.post.findMany({
-                where,
-                skip: (page - 1) * limit,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    postAuthor: true,
-                    postCategory: true,
-                    relatedTags: true,
-                },
-            }),
-            this.prisma.post.count({ where }),
-        ]);
+        const items = this.prisma.post.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                postAuthor: true,
+                postCategory: true,
+                relatedTags: true,
+            },
+        });
 
-        return {
-            items: posts,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        };
+        return items
     }
 
     async findOne(id: string) {

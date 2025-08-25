@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { PostStatus } from '@prisma/client';
+import { FileSizeInterceptor } from 'src/common/interceptors/file-size.interceptor';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -30,7 +31,12 @@ export class PostsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
     @ApiConsumes('multipart/form-data')
-    @UseInterceptors(FileInterceptor('thumbnail'))
+    @UseInterceptors(
+        FileInterceptor('thumbnail'),
+        new FileSizeInterceptor({
+            thumbnail: 5 * 1024 * 1024, //10MB
+        }))
+
     @ApiBody({
         description: 'Criar post com thumbnail',
         schema: {
@@ -38,7 +44,7 @@ export class PostsController {
             properties: {
                 postTitle: { type: 'string' },
                 postContent: { type: 'object' },
-                postAuthorId: { type: 'string', format: 'uuid' },
+                // postAuthorId: { type: 'string', format: 'uuid' },
                 postStatus: { type: 'string', enum: Object.values(PostStatus) },
                 postParentId: { type: 'string', format: 'uuid' },
                 postCategoryId: { type: 'string', format: 'uuid' },
