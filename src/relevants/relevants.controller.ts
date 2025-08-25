@@ -5,15 +5,16 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
-import { FileFieldsInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
+import { FileSizeInterceptor } from 'src/common/interceptors/file-size.interceptor';
 
 @ApiTags('Relevants')
-@Controller('Relevants')
+@Controller('relevants')
 @ApiBearerAuth()
 export class RelevantsController {
     constructor(
@@ -33,6 +34,10 @@ export class RelevantsController {
             { name: 'videoFile', maxCount: 1 },
             { name: 'coverFile', maxCount: 1 },
         ]),
+        new FileSizeInterceptor({
+            videoFile: 10 * 1024 * 1024, //10MB
+            coverFile: 5 * 1024 * 1024, //10MB
+        })
     ) @ApiBody({
         description: 'Upload de Webstory com vídeo e capa',
         schema: {
@@ -61,20 +66,19 @@ export class RelevantsController {
         },
     })
     async create(
-        @UploadedFiles(new ParseFilePipe({ validators: [new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 })] }))
-        files: Express.Multer.File[],
+        @UploadedFiles()
+        files: { videoFile: Express.Multer.File, coverFile?: Express.Multer.File },
         @Body() dto: any
     ): Promise<StandardResponse> {
-        const videoFile = files.find(f => f.mimetype.startsWith('video/'));
-        const imageFile = files.find(f => f.mimetype.startsWith('image/'));
-
+        const { videoFile, coverFile: imageFile } = files
+        console.log(files)
         if (!videoFile) throw new Error(ResponseMessageEnum.VIDEO_FILE_REQUIRED);
 
-        const uploadedVideo = await this.uploadService.upload(videoFile, BucketPrefixEnum.RELEVANTS_VIDEO);
+        const uploadedVideo = await this.uploadService.upload(videoFile[0], BucketPrefixEnum.RELEVANTS_VIDEO);
         dto.videoUrl = uploadedVideo.url;
 
         if (imageFile) {
-            const uploadedImage = await this.uploadService.upload(imageFile, BucketPrefixEnum.RELEVANTS_COVER);
+            const uploadedImage = await this.uploadService.upload(imageFile[0], BucketPrefixEnum.RELEVANTS_COVER);
             dto.coverImageUrl = uploadedImage.url;
         }
 

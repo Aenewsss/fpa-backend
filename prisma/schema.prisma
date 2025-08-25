@@ -98,6 +98,7 @@ model Category {
 model Tag {
   id        String   @id @default(uuid())
   name      String
+  color     String   @default("#000")
   slug      String   @unique
   removed   Boolean  @default(false)
   posts     Post[]   @relation("PostTags")

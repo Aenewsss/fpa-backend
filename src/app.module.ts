@@ -11,6 +11,7 @@ import { PostsModule } from './posts/posts.module';
 import { BannersModule } from './banners/banners.module';
 import { WebstoriesModule } from './webstories/webstories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { RelevantsModule } from './relevants/relevants.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PostsModule,
     BannersModule,
     WebstoriesModule,
+    RelevantsModule,
     DashboardModule
   ],
   controllers: [AppController],

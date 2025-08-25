@@ -17,31 +17,17 @@ export class TagsService {
         const { page = 1, limit = 10, search } = query;
         const skip = (page - 1) * limit;
 
-        const [items, total] = await this.prisma.$transaction([
+        const items = await
             this.prisma.tag.findMany({
                 where: search
                     ? { name: { contains: search, mode: 'insensitive' }, removed: { not: true } }
-                    : undefined,
+                    : {removed: false},
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.tag.count({
-                where: search
-                    ? { name: { contains: search, mode: 'insensitive' }, removed: { not: true } }
-                    : undefined,
-            }),
-        ]);
+            });
 
-        return {
-            items,
-            meta: {
-                totalItems: total,
-                itemCount: items.length,
-                totalPages: Math.ceil(total / limit),
-                currentPage: page,
-            },
-        };
+        return items
     }
 
     async findOne(id: string) {

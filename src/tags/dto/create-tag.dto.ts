@@ -9,4 +9,8 @@ export class CreateTagDto {
     @ApiProperty()
     @IsString()
     slug: string;
+
+    @ApiProperty()
+    @IsString()
+    color: string;
 }

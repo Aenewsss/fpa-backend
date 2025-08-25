@@ -28,25 +28,15 @@ export class RelevantsService {
             }),
         };
 
-        const [items, total] = await this.prisma.$transaction([
-            this.prisma.relevant.findMany({
-                where: filters,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.relevant.count({ where: filters }),
-        ]);
+        const items = this.prisma.relevant.findMany({
+            where: filters,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+        });
 
-        return {
-            items,
-            meta: {
-                totalItems: total,
-                itemCount: items.length,
-                totalPages: Math.ceil(total / limit),
-                currentPage: page,
-            },
-        };
+        return items
+
     }
 
     async findOne(id: string) {
