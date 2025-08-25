@@ -4,7 +4,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { CategoryService } from './category.service';
+import { CategoryService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
@@ -13,7 +13,7 @@ import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('Categories')
-@Controller('category')
+@Controller('categories')
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) { }
 
@@ -74,5 +74,18 @@ export class CategoryController {
             data: result,
             message: ResponseMessageEnum.CATEGORY_DELETED_SUCCESSFULLY
         }
+    }
+
+    @Patch(':id/reorder/:newIndex')
+    @Roles(UserRoleEnum.ADMIN)
+    @ApiOperation({ summary: 'Reorder a webstory' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    async reorder(@Param('id') id: string, @Param('newIndex') newIndex: number): Promise<StandardResponse> {
+        const result = await this.categoryService.reorder(id, newIndex);
+        return {
+            data: result,
+            message: ResponseMessageEnum.WEBSTORY_ORDER_UPDATED,
+        };
     }
 }

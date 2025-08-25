@@ -5,7 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
-import { CategoryModule } from './category/category.module';
+import { CategoryModule } from './categories/categories.module';
 import { TagModule } from './tags/tags.module';
 import { PostsModule } from './posts/posts.module';
 import { BannersModule } from './banners/banners.module';

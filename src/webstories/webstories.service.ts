@@ -11,7 +11,13 @@ export class WebstoriesService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreateWebstoryDto) {
-        return this.prisma.webstory.create({ data: { ...dto } });
+        const lastBanner = await this.prisma.banner.findFirst({
+            orderBy: { order: 'desc' },
+        });
+
+        const nextOrder = (lastBanner?.order ?? 0) + 1;
+
+        return this.prisma.webstory.create({ data: { ...dto, order: nextOrder } });
     }
 
     async findAll(query: PaginationQueryDto) {
@@ -28,25 +34,15 @@ export class WebstoriesService {
             }),
         };
 
-        const [items, total] = await this.prisma.$transaction([
-            this.prisma.webstory.findMany({
-                where: filters,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.webstory.count({ where: filters }),
-        ]);
+        const items = await this.prisma.webstory.findMany({
+            where: filters,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+        })
 
-        return {
-            items,
-            meta: {
-                totalItems: total,
-                itemCount: items.length,
-                totalPages: Math.ceil(total / limit),
-                currentPage: page,
-            },
-        };
+        return items
+
     }
 
     async findOne(id: string) {
