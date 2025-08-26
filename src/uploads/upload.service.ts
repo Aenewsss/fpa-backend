@@ -24,7 +24,7 @@ export class UploadService {
         this.bucket = process.env.R2_BUCKET!;
     }
 
-    async upload(file: Express.Multer.File, pathPrefix: BucketPrefixEnum) {
+    async upload(file: Express.Multer.File, pathPrefix: BucketPrefixEnum | string) {
         const extension = extname(file.originalname);
         const hash = createHash('sha256').update(file.buffer).digest('hex');
         const filename = `${hash}${extension}`;

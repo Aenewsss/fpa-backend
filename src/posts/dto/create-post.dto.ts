@@ -11,13 +11,13 @@ export class CreatePostDto {
 
     @ApiProperty({ type: 'object', description: 'Conteúdo do post em JSON (Tiptap)', additionalProperties: true })
     @IsNotEmpty()
-    postContent: Record<string, any>;
+    postContent: string;
 
 
     @ApiProperty()
     @IsUUID()
     @IsOptional()
-    postAuthorId: string;
+    postAuthorId?: string;
 
     @ApiProperty({ enum: PostStatus })
     @IsEnum(PostStatus)
