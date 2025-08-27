@@ -52,7 +52,7 @@ export class PostsService {
 
         const where: any = {
             postTitle: search ? { contains: search, mode: 'insensitive' } : undefined,
-            postStatus: { not: 'removed' },
+            removed: false,
         };
 
         const items = this.prisma.post.findMany({
