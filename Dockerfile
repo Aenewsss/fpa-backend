@@ -25,6 +25,9 @@ FROM node:20-slim
 
 WORKDIR /app
 
+# Instala o OpenSSL 1.1
+RUN apt-get update -y && apt-get install -y openssl
+
 # ARGs (recebidos durante o build)
 ARG DATABASE_URL
 ARG UPSTASH_REDIS_REST_URL
