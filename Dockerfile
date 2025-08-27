@@ -70,4 +70,4 @@ COPY --from=builder /app/dist ./dist
 ENV NODE_ENV=production
 
 # Comando de inicialização
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]
