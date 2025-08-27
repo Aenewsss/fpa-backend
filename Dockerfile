@@ -65,6 +65,8 @@ RUN npm install --only=production --legacy-peer-deps
 
 # Copia apenas os arquivos buildados (sem fontes, testes, etc.)
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Define ambiente de execução como produção
 ENV NODE_ENV=production
