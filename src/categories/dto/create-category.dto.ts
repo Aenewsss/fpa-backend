@@ -34,4 +34,8 @@ export class CreateCategoryDto {
     @IsOptional()
     @IsBoolean()
     isVisible?: boolean;
+
+    @ApiProperty()
+    @IsString()
+    color: string;
 }

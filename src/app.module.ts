@@ -12,6 +12,8 @@ import { BannersModule } from './banners/banners.module';
 import { WebstoriesModule } from './webstories/webstories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { RelevantsModule } from './relevants/relevants.module';
+import { TwitterModule } from './twitter/twitter.module';
+import { VideosModule } from './videos/video.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { RelevantsModule } from './relevants/relevants.module';
     BannersModule,
     WebstoriesModule,
     RelevantsModule,
-    DashboardModule
+    DashboardModule,
+    TwitterModule,
+    VideosModule
   ],
   controllers: [AppController],
   providers: [AppService],

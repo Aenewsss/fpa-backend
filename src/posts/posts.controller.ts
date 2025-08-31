@@ -11,7 +11,7 @@ import { UserId } from 'src/auth/decorators/user-id.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { PostStatus } from '@prisma/client';
@@ -60,7 +60,12 @@ export class PostsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
     @ApiConsumes('multipart/form-data')
-    @UseInterceptors(FilesInterceptor('files'))
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'files', maxCount: 5 },
+            { name: 'thumbnailFile', maxCount: 1 },
+        ])
+    )
     @ApiBody({
         description: 'Criar post',
         schema: {
@@ -78,16 +83,11 @@ export class PostsController {
                 },
                 slug: { type: 'string' },
                 summary: { type: 'string' },
-                isFeatured: { type: 'boolean' },
+                isFeatured: { type: 'string' },
                 viewCount: { type: 'integer' },
                 tagIds: {
                     type: 'array',
                     items: { type: 'string', format: 'uuid' },
-                },
-                thumbnail: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Imagem de capa do post (até 5MB)',
                 },
             },
             required: ['postTitle', 'postContent', 'postStatus', 'postCategoryId', 'slug'],
@@ -96,25 +96,32 @@ export class PostsController {
     async create(
         @Body() dto: any,
         @UserId() userId: string,
-        // @UploadedFile(new ParseFilePipe({ fileIsRequired: false, validators: [new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })] }))
-        // file?: Express.Multer.File,
-        @UploadedFiles()
-        files?: Express.Multer.File[],
+        @UploadedFiles() files: { thumbnailFile: Express.Multer.File, files?: Express.Multer.File[] },
     ): Promise<StandardResponse> {
+        if (!files.thumbnailFile[0]) {
+            throw new Error('THUMBNAIL_REQUIRED')
+        }
+
+        const uploadedFile = await this.uploadsService.upload(files.thumbnailFile[0], `${BucketPrefixEnum.POSTS}thumbnail/${dto.slug}`);
+        dto.thumbnailUrl = uploadedFile.url
+
         let postContent: object
 
-        if (files && files.length) {
+        if (files && files.files?.length) {
             const uploads = await Promise.all(
-                files.map(async file => ({
+                files.files.map(async file => ({
                     url: (await this.uploadsService.upload(file, `${BucketPrefixEnum.POSTS}${dto.slug}`)).url,
                     filename: file.originalname.split('.').slice(0, -1).join('.')
                 }))
             )
 
             postContent = this.replaceImageSrcsByFilename(JSON.parse(dto.postContent), uploads)
+        } else {
+            postContent = JSON.parse(dto.postContent)
         }
 
         dto.postContent = postContent
+        dto.isFeatured = dto.isFeatured === 'true'
 
         const result = await this.postsService.create(dto, userId);
         return {
@@ -127,6 +134,16 @@ export class PostsController {
     @ApiOperation({ summary: 'List all posts with pagination' })
     async findAll(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
         const result = await this.postsService.findAll(query);
+        return {
+            data: result,
+            message: ResponseMessageEnum.POSTS_LISTED_SUCCESSFULLY,
+        };
+    }
+
+    @Get('featured')
+    @ApiOperation({ summary: 'List all posts with pagination' })
+    async findFeatured(): Promise<StandardResponse> {
+        const result = await this.postsService.findFeatured();
         return {
             data: result,
             message: ResponseMessageEnum.POSTS_LISTED_SUCCESSFULLY,
@@ -179,5 +196,10 @@ export class PostsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     async uploadFile(@UploadedFile() file: Express.Multer.File) {
         return this.uploadsService.upload(file, BucketPrefixEnum.POSTS);
+    }
+
+    @Post(':id/view')
+    async incrementView(@Param('id') id: string): Promise<void> {
+        await this.postsService.increment(id);
     }
 }

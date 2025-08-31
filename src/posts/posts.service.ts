@@ -70,6 +70,24 @@ export class PostsService {
         return items
     }
 
+    async findFeatured() {
+        const items = this.prisma.post.findMany({
+            where: {
+                isFeatured: true,
+                removed: false,
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                postAuthor: true,
+                postCategory: true,
+                relatedTags: true,
+            },
+            take: 3
+        });
+
+        return items
+    }
+
     async findOne(id: string) {
         const post = await this.prisma.post.findUnique({
             where: { id },
@@ -100,4 +118,16 @@ export class PostsService {
             },
         });
     }
+
+    async increment(id: string) {
+        return this.prisma.post.update({
+            where: { id },
+            data: {
+                views: {
+                    increment: 1,
+                },
+            },
+        });
+    }
+
 }
