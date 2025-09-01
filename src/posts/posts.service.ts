@@ -130,4 +130,24 @@ export class PostsService {
         });
     }
 
+    async mostViewed() {
+        const posts = await this.prisma.post.findMany({
+            where: {
+                removed: false,
+                isFeatured: false,
+                views: { gt: 0 }
+            },
+            orderBy: {
+                views: 'desc',
+            },
+            take: 8,
+            include: {
+                postAuthor: true,
+                postCategory: true,
+                relatedTags: true,
+            },
+        });
+
+        return posts;
+    }
 }

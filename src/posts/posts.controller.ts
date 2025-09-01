@@ -54,6 +54,15 @@ export class PostsController {
         }
     }
 
+    @Get('most-viewed')
+    async mostViewed(): Promise<StandardResponse> {
+        const result = await this.postsService.mostViewed();
+        return {
+            data: result,
+            message: ResponseMessageEnum.POSTS_LISTED_SUCCESSFULLY,
+        };
+    }
+
     @Post()
     @ApiOperation({ summary: 'Create a new post' })
     @ApiBearerAuth()
