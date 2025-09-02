@@ -158,3 +158,10 @@ model Magazine {
   id            String   @id @default(uuid())
   pdfUrl        String
 }
+
+model NewsletterSubscription {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+} 
