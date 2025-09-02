@@ -2,6 +2,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as sendpulse from 'sendpulse-api'
 import { PrismaService } from 'src/prisma/prisma.service';
+import { chunk } from 'lodash';
+const BATCH_SIZE = 100;
 
 @Injectable()
 export class MailService {
@@ -163,5 +165,55 @@ export class MailService {
                 },
             );
         });
+    }
+
+    async sendNewsletterEmail(templateId: number, subject: string) {
+        const usersSubscribed = await this.prisma.newsletterSubscription.findMany();
+
+        if (usersSubscribed.length === 0) {
+            this.logger.warn('Nenhum usuário inscrito na newsletter.');
+            return;
+        }
+
+        const recipients = usersSubscribed.map((user) => ({
+            email: user.email,
+        }));
+
+        const batches = chunk(recipients, BATCH_SIZE);
+
+        console.log('batches', batches)
+
+        for (const [index, batch] of batches.entries()) {
+            console.log('batch', batch)
+            await new Promise<void>((resolve, reject) => {
+                sendpulse.smtpSendMail(
+                    (response: any) => {
+                        if (response?.result) {
+                            this.logger.log(`Lote ${index + 1}/${batches.length} enviado com sucesso.`);
+                            resolve();
+                        } else {
+                            this.logger.error(`Erro no envio do lote ${index + 1}`, response);
+                            reject(response);
+                        }
+                    },
+                    {
+                        from: {
+                            name: this.senderName,
+                            email: this.senderEmail,
+                        },
+                        to: batch,
+                        template: {
+                            id: templateId,
+                        },
+                        subject,
+                    }
+                );
+            });
+
+            // 🔁 Opcional: delay entre os lotes (ex: 1 segundo)
+            await new Promise((res) => setTimeout(res, 1000));
+        }
+
+        this.logger.log(`Todos os ${batches.length} lotes enviados com sucesso.`);
     }
 }
