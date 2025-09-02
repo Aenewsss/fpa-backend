@@ -153,3 +153,8 @@ model Relevant {
   removed       Boolean  @default(false)
   order         Int      @unique @default(0)
 }
+
+model Magazine {
+  id            String   @id @default(uuid())
+  pdfUrl        String
+}

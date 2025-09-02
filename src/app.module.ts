@@ -14,6 +14,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { RelevantsModule } from './relevants/relevants.module';
 import { TwitterModule } from './twitter/twitter.module';
 import { VideosModule } from './videos/video.module';
+import { MagazineModule } from './magazine/magazine.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { VideosModule } from './videos/video.module';
     RelevantsModule,
     DashboardModule,
     TwitterModule,
-    VideosModule
+    VideosModule,
+    MagazineModule
   ],
   controllers: [AppController],
   providers: [AppService],
