@@ -82,7 +82,7 @@ export class PostsService {
                 postCategory: true,
                 relatedTags: true,
             },
-            take: 3
+            take: 4
         });
 
         return items
