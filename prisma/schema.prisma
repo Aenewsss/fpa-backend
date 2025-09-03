@@ -82,21 +82,22 @@ model Post {
 }
 
 model Category {
-  id          String     @id @default(uuid())
-  name        String
-  slug        String     @unique
-  description String?
-  parentId    String?
-  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  iconUrl     String?
-  order       Int        @default(0)
-  isVisible   Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  posts       Post[]     @relation("PostCategory")
-  removed     Boolean    @default(false)
-  color       String     @default("#000")
+  id           String     @id @default(uuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  parentId     String?
+  parent       Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryHierarchy")
+  thumbnailUrl String?
+  order        Int        @default(0)
+  isVisible    Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  posts        Post[]     @relation("PostCategory")
+  removed      Boolean    @default(false)
+  color        String     @default("#000")
+  isFeatured   Boolean    @default(false)
 }
 
 model Tag {
@@ -155,8 +156,8 @@ model Relevant {
 }
 
 model Magazine {
-  id            String   @id @default(uuid())
-  pdfUrl        String
+  id     String @id @default(uuid())
+  pdfUrl String
 }
 
 model NewsletterSubscription {
@@ -164,4 +165,4 @@ model NewsletterSubscription {
   name      String
   email     String   @unique
   createdAt DateTime @default(now())
-} 
+}

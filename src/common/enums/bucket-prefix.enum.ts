@@ -1,5 +1,6 @@
 export enum BucketPrefixEnum {
     BANNERS = 'banners',
+    CATEGORIES = 'categories',
     MAGAZINE = 'magazine',
     VIDEOS = 'videos',
     POSTS = 'posts/',

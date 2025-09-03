@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsInt, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsInt, IsUrl, IsBooleanString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCategoryDto {
@@ -38,4 +38,13 @@ export class CreateCategoryDto {
     @ApiProperty()
     @IsString()
     color: string;
+
+    @ApiProperty({ description: 'Determina se a categoria será destaque na home', required: false, default: false })
+    @IsOptional()
+    @IsBooleanString()
+    isFeatured?: any;
+
+    @ApiProperty()
+    @IsOptional()
+    thumbnailUrl?: string
 }

@@ -1,6 +1,6 @@
 // src/category/category.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -11,18 +11,61 @@ import { UserRoleEnum } from 'src/common/enums/role.enum';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadService } from 'src/uploads/upload.service';
+import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
-    constructor(private readonly categoryService: CategoryService) { }
+    constructor(
+        private readonly categoryService: CategoryService,
+        private readonly uploadService: UploadService,
+    ) { }
 
     @Post()
     @ApiOperation({ summary: 'Create a category' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
     @ApiBearerAuth()
-    async create(@Body() dto: CreateCategoryDto): Promise<StandardResponse> {
+    @UseInterceptors(
+        FileInterceptor('file', {
+            limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        }),
+    )
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        description: 'Upload de banner com imagem',
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+                name: { type: 'string' },
+                slug: { type: 'string' },
+                description: { type: 'string' },
+                parentId: { type: 'string' },
+                order: { type: 'number' },
+                isVisible: { type: 'boolean' },
+                color: { type: 'string' },
+                isFeatured: { type: 'boolean' },
+            },
+        },
+    })
+    async create(@Body() dto: CreateCategoryDto, @UploadedFile() file: Express.Multer.File): Promise<StandardResponse> {
+        const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.CATEGORIES);
+        dto.thumbnailUrl = uploadedFile.url
+        if(dto.isFeatured) dto.isFeatured = dto.isFeatured == "true"
+
+        if (uploadedFile.duplicated) {
+            return {
+                data: uploadedFile,
+                message: ResponseMessageEnum.CATEGORY_THUMBNAIL_ALREADY_EXISTS,
+            };
+        }
+
         const result = await this.categoryService.create(dto);
         return {
             data: result,

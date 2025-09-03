@@ -88,6 +88,62 @@ export class PostsService {
         return items
     }
 
+    async findCategoryFeatured() {
+        // Buscar até 3 categorias destacadas
+        const categories = await this.prisma.category.findMany({
+            where: {
+                isFeatured: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            take: 3,
+        });
+
+        // Se não houver categorias destacadas, retorne os 3 últimos posts normais
+        if (categories.length === 0) {
+            const fallbackPosts = await this.prisma.post.findMany({
+                where: { removed: false },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    postAuthor: true,
+                    postCategory: true,
+                    relatedTags: true,
+                },
+                take: 3,
+            });
+
+            return { categories: [], postsByCategory: {}, fallbackPosts };
+        }
+
+        // Para cada categoria destacada, buscar até 4 posts
+        const postsByCategory = {};
+
+        for (const category of categories) {
+            const posts = await this.prisma.post.findMany({
+                where: {
+                    removed: false,
+                    postCategoryId: category.id,
+                },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    postAuthor: true,
+                    postCategory: true,
+                    relatedTags: true,
+                },
+                take: 4,
+            });
+
+            postsByCategory[category.id] = posts;
+        }
+
+        return {
+            categories,
+            postsByCategory,
+            fallbackPosts: [],
+        };
+    }
+
     async findOne(id: string) {
         const post = await this.prisma.post.findUnique({
             where: { id },

@@ -159,6 +159,16 @@ export class PostsController {
         };
     }
 
+    @Get('category/featured/')
+    @ApiOperation({ summary: 'List all posts with pagination' })
+    async findCategoryFeatured(): Promise<StandardResponse> {
+        const result = await this.postsService.findCategoryFeatured();
+        return {
+            data: result,
+            message: ResponseMessageEnum.POSTS_LISTED_SUCCESSFULLY,
+        };
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get post by ID' })
     async findOne(@Param('id') id: string): Promise<StandardResponse> {
