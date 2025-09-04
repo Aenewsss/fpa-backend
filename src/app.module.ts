@@ -15,6 +15,8 @@ import { RelevantsModule } from './relevants/relevants.module';
 import { TwitterModule } from './twitter/twitter.module';
 import { VideosModule } from './videos/video.module';
 import { MagazineModule } from './magazine/magazine.module';
+import { PautaModule } from './pauta/pauta.module';
+import { LiveModule } from './live/live.module';
 
 @Module({
   imports: [
@@ -33,7 +35,9 @@ import { MagazineModule } from './magazine/magazine.module';
     DashboardModule,
     TwitterModule,
     VideosModule,
-    MagazineModule
+    MagazineModule,
+    PautaModule,
+    LiveModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -97,7 +97,7 @@ export class PostsService {
             orderBy: {
                 createdAt: 'desc',
             },
-            take: 3,
+            take: 4,
         });
 
         // Se não houver categorias destacadas, retorne os 3 últimos posts normais

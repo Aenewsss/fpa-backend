@@ -10,8 +10,9 @@ export class TwitterController {
 
     @Get('search')
     async searchTweets(): Promise<StandardResponse> {
+        const result = await this.twitterService.searchRecentTweets()
         return {
-            data: this.twitterService.searchRecentTweets(),
+            data: result,
             message: ResponseMessageEnum.TWEETS_FETCHED_SUCCESSFULLY,
         };
     }

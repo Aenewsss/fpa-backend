@@ -166,3 +166,14 @@ model NewsletterSubscription {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+model Live {
+  id        String  @id @default(uuid())
+  link      String
+  isEnabled Boolean @default(false)
+}
+
+model Pauta {
+  id       String @id @default(uuid())
+  imageUrl String
+}
