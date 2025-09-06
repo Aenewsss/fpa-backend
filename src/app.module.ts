@@ -17,6 +17,9 @@ import { VideosModule } from './videos/video.module';
 import { MagazineModule } from './magazine/magazine.module';
 import { PautaModule } from './pauta/pauta.module';
 import { LiveModule } from './live/live.module';
+import { UsageTermsPageModule } from './usage-terms-page/usage-terms-page.module';
+import { ContactPageModule } from './contact-page/contact-page.module';
+import { AboutPageModule } from './about-page/about-page.module';
 
 @Module({
   imports: [
@@ -37,7 +40,10 @@ import { LiveModule } from './live/live.module';
     VideosModule,
     MagazineModule,
     PautaModule,
-    LiveModule
+    LiveModule,
+    UsageTermsPageModule,
+    ContactPageModule,
+    AboutPageModule
   ],
   controllers: [AppController],
   providers: [AppService],

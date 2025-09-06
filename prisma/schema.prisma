@@ -177,3 +177,18 @@ model Pauta {
   id       String @id @default(uuid())
   imageUrl String
 }
+
+model UsageTermsPage {
+  id      String @id @default(uuid())
+  content Json
+}
+
+model ContactPage {
+  id      String @id @default(uuid())
+  content Json
+}
+
+model AboutPage {
+  id      String @id @default(uuid())
+  content Json
+}
