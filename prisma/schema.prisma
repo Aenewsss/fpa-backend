@@ -125,10 +125,11 @@ model Banner {
 model Video {
   id          String   @id @default(uuid())
   description String
-  url         String
+  url         String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   removed     Boolean  @default(false)
+  embed       String   @default("")
 }
 
 model Webstory {

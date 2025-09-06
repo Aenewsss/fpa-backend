@@ -1,14 +1,15 @@
 // dto/create-banner.dto.ts
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateVideoDto {
+    @IsString()
+    @IsNotEmpty()
     @ApiProperty()
-    @IsString()
-    @IsOptional()
-    url: any;
-
-    @ApiProperty({ required: false })
-    @IsString()
     description: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
+    embed: string;
 }

@@ -24,40 +24,22 @@ export class VideosController {
     @Roles(UserRoleEnum.ADMIN)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    @UseInterceptors(
-        FileInterceptor('file', {
-            limits: { fileSize: 20 * 1024 * 1024 }, // 10MB
-        }),
-    )
-    @ApiConsumes('multipart/form-data') // ✅ necessário
+    @ApiOperation({ summary: 'Create a new video with YouTube embed HTML' })
     @ApiBody({
-        description: 'Upload de video',
+        description: 'Criação de vídeo com embed completo do YouTube',
         schema: {
             type: 'object',
             properties: {
-                description: {
+                description: { type: 'string', example: 'Conheça nossa nova coleção!' },
+                embed: {
                     type: 'string',
-                    example: 'Conheça nossa nova coleção!',
+                    example: '<iframe width="560" height="315" src="https://www.youtube.com/embed/abc123" frameborder="0" allowfullscreen></iframe>',
                 },
             },
         },
     })
-    @ApiOperation({ summary: 'Create a new video' })
-    async create(
-        @UploadedFile() file: Express.Multer.File,
-        @Body() dto: CreateVideoDto,
-    ): Promise<StandardResponse> {
-        const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.VIDEOS);
-        dto.url = uploadedFile.url
-
-        if (uploadedFile.duplicated) {
-            return {
-                data: uploadedFile,
-                message: ResponseMessageEnum.VIDEO_ALREADY_EXISTS,
-            };
-        }
-
-        const result = await this.videosService.create({ ...dto });
+    async create(@Body() dto: CreateVideoDto): Promise<StandardResponse> {
+        const result = await this.videosService.create(dto)
 
         return {
             data: result,
