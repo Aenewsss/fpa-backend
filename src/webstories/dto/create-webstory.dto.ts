@@ -1,5 +1,30 @@
-import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+class WebstorySlideDto {
+    @ApiProperty({
+        example: 'https://cdn.seudominio.com.br/webstories/slide1.jpg',
+    })
+    @IsNotEmpty()
+    @IsUrl()
+    imageUrl: string;
+
+    @ApiProperty({
+        example: 'Texto para este slide',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    text?: string;
+
+    @ApiProperty({
+        example: 0,
+        required: false,
+    })
+    @IsOptional()
+    order?: number;
+}
 
 export class CreateWebstoryDto {
     @ApiProperty({ example: 'Como aproveitar o verão em 30 segundos' })
@@ -8,26 +33,19 @@ export class CreateWebstoryDto {
     title: string;
 
     @ApiProperty({
-        example: 'https://cdn.seudominio.com.br/webstories/abc123.mp4',
-    })
-    @IsNotEmpty()
-    @IsUrl()
-    @IsOptional()
-    videoUrl: string;
-
-    @ApiProperty({
-        example: 'https://cdn.seudominio.com.br/thumbnails/abc123.jpg',
-        required: false,
-    })
-    @IsOptional()
-    @IsUrl()
-    coverImageUrl?: string;
-
-    @ApiProperty({
         example: 'Dicas rápidas para curtir o verão com saúde e estilo.',
         required: false,
     })
     @IsOptional()
     @IsString()
     description?: string;
+
+    @ApiProperty({
+        type: [WebstorySlideDto],
+        description: 'Lista de slides com imagem e texto',
+    })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => WebstorySlideDto)
+    slides: WebstorySlideDto[];
 }

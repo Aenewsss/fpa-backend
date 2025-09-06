@@ -11,13 +11,27 @@ export class WebstoriesService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreateWebstoryDto) {
-        const lastBanner = await this.prisma.banner.findFirst({
+        const last = await this.prisma.webstory.findFirst({
             orderBy: { order: 'desc' },
         });
 
-        const nextOrder = (lastBanner?.order ?? 0) + 1;
+        const nextOrder = (last?.order ?? 0) + 1;
 
-        return this.prisma.webstory.create({ data: { ...dto, order: nextOrder } });
+        const { slides, ...rest } = dto;
+
+        return this.prisma.webstory.create({
+            data: {
+                ...rest,
+                order: nextOrder,
+                slides: {
+                    create: slides.map(slide => ({
+                        imageUrl: slide.imageUrl,
+                        text: slide.text,
+                        order: slide.order ?? 0, // ou você pode usar o índice
+                    })),
+                },
+            },
+        });
     }
 
     async findAll(query: PaginationQueryDto) {
@@ -39,6 +53,9 @@ export class WebstoriesService {
             skip,
             take: limit,
             orderBy: { createdAt: 'desc' },
+            include: {
+                slides: true
+            }
         })
 
         return items
@@ -51,8 +68,30 @@ export class WebstoriesService {
         return item;
     }
 
-    update(id: string, dto: UpdateWebstoryDto) {
-        return this.prisma.webstory.update({ where: { id }, data: dto });
+    async update(id: string, dto: UpdateWebstoryDto) {
+        const { slides, ...rest } = dto;
+
+        return this.prisma.$transaction([
+            // Remove os slides antigos
+            this.prisma.webstorySlide.deleteMany({
+                where: { webstoryId: id },
+            }),
+
+            // Atualiza o conteúdo da Webstory e recria os slides
+            this.prisma.webstory.update({
+                where: { id },
+                data: {
+                    ...rest,
+                    slides: {
+                        create: slides?.map(slide => ({
+                            imageUrl: slide.imageUrl,
+                            text: slide.text,
+                            order: slide.order ?? 0,
+                        })) || [],
+                    },
+                },
+            }),
+        ]).then(([_, updatedWebstory]) => updatedWebstory);
     }
 
     remove(id: string) {

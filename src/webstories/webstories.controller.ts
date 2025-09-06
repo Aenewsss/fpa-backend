@@ -11,6 +11,7 @@ import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
+import { randomUUID } from 'crypto';
 
 @ApiTags('Webstories')
 @Controller('webstories')
@@ -22,70 +23,70 @@ export class WebstoriesController {
 
     @Post()
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Create a new webstory' })
+    @ApiOperation({ summary: 'Create a new webstory with image slides' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
     @ApiConsumes('multipart/form-data')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRoleEnum.ADMIN)
     @UseInterceptors(
         FileFieldsInterceptor([
-            { name: 'videoFile', maxCount: 1 },
-            { name: 'coverFile', maxCount: 1 },
+            { name: 'slides', maxCount: 20 }, // até 20 imagens
         ]),
-    ) @ApiBody({
-        description: 'Upload de Webstory com vídeo e capa',
+    )
+    @ApiBody({
+        description: 'Upload de Webstory com capa e múltiplas imagens de slides',
         schema: {
             type: 'object',
             properties: {
-                videoFile: {
+                title: { type: 'string', example: 'História do Agro' },
+                description: { type: 'string', example: 'Do início até hoje' },
+                'slideTexts[0]': {
                     type: 'string',
-                    format: 'binary',
-                    description: 'Arquivo de vídeo vertical (obrigatório)',
+                    example: 'Texto do primeiro slide',
                 },
-                coverFile: {
+                'slideTexts[1]': {
                     type: 'string',
-                    format: 'binary',
-                    description: 'Imagem de capa do vídeo (opcional)',
+                    example: 'Texto do segundo slide',
                 },
-                title: {
-                    type: 'string',
-                    example: 'Conheça nossa nova coleção!',
-                },
-                description: {
-                    type: 'string',
-                    example: 'Essa coleção foi feita pensando em você.',
+                'slides': {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        format: 'binary',
+                    },
                 },
             },
-            required: ['videoFile', 'title'],
+            required: ['title', 'slides'],
         },
     })
     async create(
         @UploadedFiles(new ParseFilePipe())
-        files: any,
+        files: Record<string, Express.Multer.File[]>,
         @Body() dto: any
     ): Promise<StandardResponse> {
-        const videoFile = files.videoFile.find(f => f.mimetype.startsWith('video/'));
-        const coverFile = files.coverFile?.find(f => f.mimetype.startsWith('image/'));
+        const { title, description } = dto;
+        const slidesFiles = files.slides ?? [];
 
-        if (!videoFile) throw new Error(ResponseMessageEnum.VIDEO_FILE_REQUIRED);
-
-        const uploadedVideo = await this.uploadService.upload(videoFile, BucketPrefixEnum.WEBSTORIES_VIDEO);
-        dto.videoUrl = uploadedVideo.url;
-
-        if (coverFile) {
-            const uploadedImage = await this.uploadService.upload(coverFile, BucketPrefixEnum.WEBSTORIES_COVER);
-            dto.coverImageUrl = uploadedImage.url;
-        } else delete dto.coverFile
-
-        if (uploadedVideo.duplicated) {
-            return {
-                data: uploadedVideo,
-                message: ResponseMessageEnum.WEBSTORY_ALREADY_EXISTS,
-            };
+        if (!slidesFiles || slidesFiles.length === 0) {
+            throw new Error('Pelo menos um slide é obrigatório.');
         }
 
-        const result = await this.service.create({ ...dto });
+        const slides = await Promise.all(
+            slidesFiles.map(async (file, index) => {
+                const uploaded = await this.uploadService.upload(file, `${BucketPrefixEnum.WEBSTORIES}${title}`);
+                return {
+                    imageUrl: uploaded.url,
+                    text: dto.slideTexts[index],
+                    order: index,
+                };
+            })
+        );
+
+        const result = await this.service.create({
+            title,
+            description,
+            slides,
+        });
+
         return {
             data: result,
             message: ResponseMessageEnum.WEBSTORY_CREATED_SUCCESSFULLY,
