@@ -68,7 +68,7 @@ model Post {
 
   relatedTags  Tag[]   @relation("PostTags")
   thumbnailUrl String?
-  slug         String  @unique
+  slug         String  
   summary      String?
   isFeatured   Boolean @default(false)
   viewCount    Int     @default(0)

@@ -12,7 +12,9 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://portalfpa.vercel.app'
+      'https://portalfpa.vercel.app',
+      'https://fpa-frontend-theta.vercel.app',
+      'https://agenciafpa.com.br'
     ]
   })
   
