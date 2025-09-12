@@ -14,7 +14,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'https://portalfpa.vercel.app',
       'https://fpa-frontend-theta.vercel.app',
-      'https://agenciafpa.com.br'
+      'https://agenciafpa.com.br',
     ]
   })
   
