@@ -1,6 +1,6 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 
 class WebstorySlideDto {
     @ApiProperty({
@@ -48,4 +48,10 @@ export class CreateWebstoryDto {
     @ValidateNested({ each: true })
     @Type(() => WebstorySlideDto)
     slides: WebstorySlideDto[];
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    isFeatured?: boolean = false;
 }

@@ -54,6 +54,7 @@ export class WebstoriesController {
                         format: 'binary',
                     },
                 },
+                isFeatured: { type: 'boolean' }
             },
             required: ['title', 'slides'],
         },

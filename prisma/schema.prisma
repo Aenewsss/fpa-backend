@@ -68,7 +68,7 @@ model Post {
 
   relatedTags  Tag[]   @relation("PostTags")
   thumbnailUrl String?
-  slug         String  
+  slug         String
   summary      String?
   isFeatured   Boolean @default(false)
   viewCount    Int     @default(0)
@@ -126,6 +126,7 @@ model Video {
   id          String   @id @default(uuid())
   description String
   url         String   @default("")
+  isFeatured  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   removed     Boolean  @default(false)
@@ -133,23 +134,24 @@ model Video {
 }
 
 model Webstory {
-  id            String           @id @default(uuid())
+  id            String   @id @default(uuid())
   title         String
-  coverImageUrl String?          // thumbnail opcional
+  coverImageUrl String? // thumbnail opcional
   description   String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  removed       Boolean          @default(false)
-  order         Int              @unique @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isFeatured    Boolean  @default(false)
+  removed       Boolean  @default(false)
+  order         Int      @unique @default(0)
 
-  slides        WebstorySlide[]  @relation("WebstoryToSlides")
+  slides WebstorySlide[] @relation("WebstoryToSlides")
 }
 
 model WebstorySlide {
   id         String   @id @default(uuid())
   imageUrl   String
   text       String?
-  order      Int      // para definir a ordem dos slides
+  order      Int // para definir a ordem dos slides
   webstoryId String
   webstory   Webstory @relation("WebstoryToSlides", fields: [webstoryId], references: [id], onDelete: Cascade)
 }

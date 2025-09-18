@@ -35,6 +35,7 @@ export class VideosController {
                     type: 'string',
                     example: '<iframe width="560" height="315" src="https://www.youtube.com/embed/abc123" frameborder="0" allowfullscreen></iframe>',
                 },
+                isFeatured: { type: 'boolean' }
             },
         },
     })

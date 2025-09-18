@@ -16,6 +16,7 @@ export class VideosService {
     async findAll() {
         return this.prisma.video.findMany({
             where: { removed: false },
+            orderBy: { isFeatured: 'desc' }
         });
     }
 
