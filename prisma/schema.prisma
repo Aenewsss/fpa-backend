@@ -71,6 +71,7 @@ model Post {
   slug         String
   summary      String?
   isFeatured   Boolean @default(false)
+  isArticle    Boolean @default(false)
   viewCount    Int     @default(0)
 
   createdAt DateTime @default(now())
