@@ -52,7 +52,7 @@ export class WebstoriesService {
             where: filters,
             skip,
             take: limit,
-            orderBy: [{ createdAt: 'desc', isFeatured: 'desc' }],
+            orderBy: [{ createdAt: 'desc' }, { isFeatured: 'desc' }],
             include: {
                 slides: true
             }
