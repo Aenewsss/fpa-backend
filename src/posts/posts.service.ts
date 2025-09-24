@@ -48,7 +48,7 @@ export class PostsService {
     }
 
     async findAll(query: PaginationQueryDto) {
-        const { page = 1, limit = 10, search, categoryId } = query;
+        const { page = 1, limit = 30, search, categoryId } = query;
 
         const where: any = {
             postTitle: search ? { contains: search, mode: 'insensitive' } : undefined,
