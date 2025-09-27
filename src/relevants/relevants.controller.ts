@@ -35,7 +35,7 @@ export class RelevantsController {
             { name: 'coverFile', maxCount: 1 },
         ]),
         new FileSizeInterceptor({
-            videoFile: 10 * 1024 * 1024, //10MB
+            videoFile: 100 * 1024 * 1024, //100MB
             coverFile: 5 * 1024 * 1024, //10MB
         })
     ) @ApiBody({
