@@ -5,6 +5,7 @@ import { extname } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class UploadService {
@@ -22,6 +23,23 @@ export class UploadService {
         });
 
         this.bucket = process.env.R2_BUCKET!;
+    }
+
+    async getSignedUrl(filename: string, contentType: string, pathPrefix: string) {
+        const key = `${pathPrefix}/${Date.now()}-${filename}`;
+        const command = new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ContentType: contentType,
+        });
+
+        const url = await getSignedUrl(this.s3 as any, command as any, { expiresIn: 3600 });
+
+        return {
+            url,        // presigned PUT url
+            key,        // s3 key
+            publicUrl: `${process.env.R2_PUBLIC_BASE_URL}/${key}`, // final file URL
+        };
     }
 
     async upload(file: Express.Multer.File, pathPrefix: BucketPrefixEnum | string) {

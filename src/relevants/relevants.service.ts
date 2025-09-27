@@ -11,7 +11,20 @@ export class RelevantsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreateRelevantDto) {
-        return this.prisma.relevant.create({ data: { ...dto } });
+        const last = await this.prisma.relevant.findFirst({
+            orderBy: { order: 'desc' },
+        });
+
+        const nextOrder = (last?.order ?? 0) + 1;
+
+        const { ...rest } = dto;
+
+        return this.prisma.relevant.create({
+            data: {
+                ...rest,
+                order: nextOrder
+            }
+        });
     }
 
     async findAll(query: PaginationQueryDto) {

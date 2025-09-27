@@ -17,7 +17,6 @@ export class TwitterService {
                     },
                 }
             );
-            console.log('userResponse.data', userResponse.data)
             const userId = userResponse.data?.data?.id;
 
             // 2. Busca os tweets pelo ID

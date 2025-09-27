@@ -11,7 +11,7 @@ async function main() {
     });
 
     if (!existing) {
-        const hashed = await bcrypt.hash('changeme123', 10); // Senha inicial padrão
+        const hashed = await bcrypt.hash('Aenaeloi1@', 10); // Senha inicial padrão
 
         await prisma.user.create({
             data: {

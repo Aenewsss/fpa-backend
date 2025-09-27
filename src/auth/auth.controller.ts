@@ -51,7 +51,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Trocar senha após autenticado' })
   async resetPassword(@UserId() userId: string, @Body() dto: ChangePasswordDto): Promise<StandardResponse> {
-    console.log(userId, dto)
     await this.authService.changePassword(userId, dto)
 
     return {

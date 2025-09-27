@@ -1,17 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { RelevantsService } from './relevants.service';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRoleEnum } from 'src/common/enums/role.enum';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
-import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
-import { FileSizeInterceptor } from 'src/common/interceptors/file-size.interceptor';
 
 @ApiTags('Relevants')
 @Controller('relevants')
@@ -22,74 +19,50 @@ export class RelevantsController {
         private readonly uploadService: UploadService
     ) { }
 
+    @Get('signed-url')
+    async getSignedUrl(
+        @Query('filename') filename: string,
+        @Query('contentType') contentType: string,
+    ): Promise<StandardResponse> {
+        const result = await this.uploadService.getSignedUrl(filename, contentType, "relevants");
+        return {
+            data: result,
+            message: ResponseMessageEnum.GET_RELEVANT_SIGNED_URL_SUCCESSFULLY
+        }
+    }
+
     @Post()
     @ApiOperation({ summary: 'Create a new relevant' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRoleEnum.ADMIN)
-    @ApiConsumes('multipart/form-data')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRoleEnum.ADMIN)
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'videoFile', maxCount: 1 },
-            { name: 'coverFile', maxCount: 1 },
-        ]),
-        new FileSizeInterceptor({
-            videoFile: 100 * 1024 * 1024, //100MB
-            coverFile: 5 * 1024 * 1024, //10MB
-        })
-    ) @ApiBody({
-        description: 'Upload de Webstory com vídeo e capa',
+    @ApiBody({
+        description: 'Create a new relevant (video and cover already uploaded to R2)',
         schema: {
             type: 'object',
             properties: {
-                videoFile: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Arquivo de vídeo vertical (obrigatório)',
-                },
-                coverFile: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Imagem de capa do vídeo (opcional)',
-                },
-                title: {
-                    type: 'string',
-                    example: 'Conheça nossa nova coleção!',
-                },
-                description: {
-                    type: 'string',
-                    example: 'Essa coleção foi feita pensando em você.',
-                },
+                title: { type: 'string', example: 'Conheça nossa nova coleção!' },
+                description: { type: 'string', example: 'Essa coleção foi feita pensando em você.' },
+                videoKey: { type: 'string', example: 'relevants/video/123abc.mp4' },
+                coverKey: { type: 'string', example: 'relevants/cover/123abc.jpg' },
             },
-            required: ['videoFile', 'title'],
+            required: ['title', 'videoKey'],
         },
     })
-    async create(
-        @UploadedFiles()
-        files: { videoFile: Express.Multer.File, coverFile?: Express.Multer.File },
-        @Body() dto: any
-    ): Promise<StandardResponse> {
-        const { videoFile, coverFile: imageFile } = files
-        console.log(files)
-        if (!videoFile) throw new Error(ResponseMessageEnum.VIDEO_FILE_REQUIRED);
-
-        const uploadedVideo = await this.uploadService.upload(videoFile[0], BucketPrefixEnum.RELEVANTS_VIDEO);
-        dto.videoUrl = uploadedVideo.url;
-
-        if (imageFile) {
-            const uploadedImage = await this.uploadService.upload(imageFile[0], BucketPrefixEnum.RELEVANTS_COVER);
-            dto.coverImageUrl = uploadedImage.url;
+    async create(@Body() dto: any): Promise<StandardResponse> {
+        if (!dto.videoKey) {
+            throw new Error(ResponseMessageEnum.VIDEO_FILE_REQUIRED);
         }
 
-        if (uploadedVideo.duplicated) {
-            return {
-                data: uploadedVideo,
-                message: ResponseMessageEnum.RELEVANT_ALREADY_EXISTS,
-            };
+        // Convert S3 keys into public URLs
+        dto.videoUrl = `${process.env.R2_PUBLIC_BASE_URL}/${dto.videoKey}`;
+        if (dto.coverKey) {
+            dto.coverImageUrl = `${process.env.R2_PUBLIC_BASE_URL}/${dto.coverKey}`;
         }
 
-        const result = await this.service.create({ ...dto });
+        const { videoKey, ...rest } = dto
+
+        const result = await this.service.create({ ...rest });
+
         return {
             data: result,
             message: ResponseMessageEnum.RELEVANT_CREATED_SUCCESSFULLY,

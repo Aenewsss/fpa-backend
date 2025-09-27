@@ -27,7 +27,7 @@ export class MailService {
     }
 
     async sendPasswordResetCode(to: string, code: string) {
-        const url = `https://seu-dominio.com.br/primeiro-acesso?email=${encodeURIComponent(to)}&code=${code}`;
+        const url = `https://agenciafpa.com.br/primeiro-acesso?email=${encodeURIComponent(to)}&code=${code}`;
 
         const emailData = {
             html: '',
@@ -181,10 +181,8 @@ export class MailService {
 
         const batches = chunk(recipients, BATCH_SIZE);
 
-        console.log('batches', batches)
 
         for (const [index, batch] of batches.entries()) {
-            console.log('batch', batch)
             await new Promise<void>((resolve, reject) => {
                 sendpulse.smtpSendMail(
                     (response: any) => {

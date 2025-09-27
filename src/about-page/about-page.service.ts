@@ -7,7 +7,6 @@ export class AboutPageService {
     constructor(private readonly prisma: PrismaService) { }
 
     async update(dto: UpdatePageDto) {
-        console.log(dto)
         const aboutPage = await this.prisma.aboutPage.findFirst()
         if (!aboutPage) return this.prisma.aboutPage.create({ data: dto });
         return this.prisma.aboutPage.update({ where: { id: aboutPage.id }, data: dto });
