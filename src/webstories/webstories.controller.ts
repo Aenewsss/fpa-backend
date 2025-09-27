@@ -76,7 +76,7 @@ export class WebstoriesController {
                 const uploaded = await this.uploadService.upload(file, `${BucketPrefixEnum.WEBSTORIES}${title}`);
                 return {
                     imageUrl: uploaded.url,
-                    text: dto.slideTexts[index],
+                    text: dto?.slideTexts ? dto?.slideTexts[index] : '',
                     order: index,
                 };
             })
