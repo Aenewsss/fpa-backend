@@ -39,7 +39,7 @@ export class UsersService {
   async inviteUser(dto: InviteUserDto, currentUserRole: UserRoleEnum) {
     const { email, role } = dto;
 
-    if (role === UserRoleEnum.ADMIN)
+    if (currentUserRole == UserRoleEnum.ADMIN && role === UserRoleEnum.ADMIN)
       throw new ForbiddenException(ResponseMessageEnum.ADMIN_CANNOT_BE_INVITED);
 
     if (currentUserRole === UserRoleEnum.MAIN_EDITOR && role !== UserRoleEnum.EDITOR)
