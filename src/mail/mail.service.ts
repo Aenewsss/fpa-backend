@@ -65,13 +65,48 @@ export class MailService {
     }
 
     async sendInvite(to: string, url: string) {
+        const html = `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Convite</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f8; }
+    .wrapper { width:100%; padding:24px 0; }
+    .container { max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    .header { padding:20px 28px; background:#1C9658; color:#fff; font-weight:700; font-size:18px; }
+    .content { padding:28px; color:#222; }
+    .p { margin:0 0 16px; line-height:1.55; }
+    .btn { display:inline-block; background:#1C9658; color:#fff !important; text-decoration:none; padding:12px 18px; border-radius:10px; font-weight:600; }
+    .url { word-break: break-all; color:#1C9658; }
+    .footer { padding:16px 28px; color:#6b7280; font-size:12px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">Convite para participar do sistema</div>
+      <div class="content">
+        <p class="p">Olá,</p>
+        <p class="p">Você recebeu um convite para acessar nossa plataforma. Clique no botão abaixo para aceitar:</p>
+        <p class="p">
+          <a class="btn" href="${url}" target="_blank" rel="noopener noreferrer">Aceitar convite</a>
+        </p>
+        <p class="p">Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+        <p class="p url">${url}</p>
+        <p class="p">Se você não esperava este convite, pode ignorar este e-mail.</p>
+      </div>
+      <div class="footer">© ${new Date().getFullYear()} — Equipe</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
         const emailData = {
-            template: {
-                id: process.env.SENDPULSE_TEMPLATE_ID_INVITE,
-                variables: {
-                    url, // variável do seu template
-                },
-            },
+            html,
+            text: `Você foi convidado a participar do sistema. Acesse: ${url}`, // fallback
             to: [{ email: to }],
             from: {
                 name: this.senderName,

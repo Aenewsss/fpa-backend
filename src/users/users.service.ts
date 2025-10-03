@@ -70,6 +70,44 @@ export class UsersService {
     await this.mailService.sendInvite(email, url);
   }
 
+  async resendInvite(email: string, currentUserRole: UserRoleEnum) {
+    // Não deixar ADMIN convidar outro ADMIN
+    const invitedUser = await this.prisma.userInvited.findFirst({
+      where: { email, status: 'pending', used: false },
+    });
+
+    if (!invitedUser) {
+      throw new NotFoundException(ResponseMessageEnum.INVITE_NOT_FOUND);
+    }
+
+    // Verificações de regra de quem pode reenviar
+    if (currentUserRole === UserRoleEnum.ADMIN && invitedUser.role === UserRoleEnum.ADMIN) {
+      throw new ForbiddenException(ResponseMessageEnum.ADMIN_CANNOT_BE_INVITED);
+    }
+
+    if (currentUserRole === UserRoleEnum.MAIN_EDITOR && invitedUser.role !== UserRoleEnum.EDITOR) {
+      throw new ForbiddenException(ResponseMessageEnum.MAIN_EDITOR_CAN_ONLY_INVITE_EDITOR);
+    }
+
+    // gera um novo token e nova expiração
+    const invitationToken = randomUUID();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // +1h
+
+    await this.prisma.userInvited.update({
+      where: { id: invitedUser.id },
+      data: {
+        invitationToken,
+        expiresAt,
+        status: 'pending',
+        used: false,
+      },
+    });
+
+    const url = `${process.env.INVITE_ACCEPT_URL}?email=${encodeURIComponent(email)}&invitationToken=${invitationToken}`;
+    await this.mailService.sendInvite(email, url);
+  }
+
   async createUser(input: CreateUserInput) {
     const { jobRole, email, password, role, firstName, lastName } = input;
 

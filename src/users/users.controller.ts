@@ -45,6 +45,20 @@ export class UsersController {
     }
   }
 
+  // user.controller.ts
+  @Post('resend-invite/:userId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+  async resendInvite(
+    @Param('userId') userId: string,
+    @UserRole() userRole: UserRoleEnum
+  ): Promise<StandardResponse> {
+    await this.usersService.resendInvite(userId, userRole);
+    return {
+      data: null,
+      message: ResponseMessageEnum.USER_INVITE_RESENT_SUCCESSFULLY
+    }
+  }
+
   @Delete(':id')
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({ summary: 'Deleta um usuário (soft delete)' })
