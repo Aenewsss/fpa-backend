@@ -21,6 +21,7 @@ import { UsageTermsPageModule } from './usage-terms-page/usage-terms-page.module
 import { ContactPageModule } from './contact-page/contact-page.module';
 import { AboutPageModule } from './about-page/about-page.module';
 import { PdfModule } from './pdf/pdf.module';
+import { AuthorModule } from './author/author.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { PdfModule } from './pdf/pdf.module';
     ContactPageModule,
     AboutPageModule,
     PdfModule,
+    AuthorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

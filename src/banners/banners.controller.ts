@@ -84,22 +84,6 @@ export class BannersController {
         };
     }
 
-    // @Patch(':id')
-    // @Roles(UserRoleEnum.ADMIN)
-    // @ApiOperation({ summary: 'Update a banner' })
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @ApiBearerAuth()
-    // async update(
-    //     @Param('id') id: string,
-    //     @Body() dto: UpdateBannerDto,
-    // ): Promise<StandardResponse> {
-    //     const result = await this.bannersService.update(id, dto);
-    //     return {
-    //         data: result,
-    //         message: ResponseMessageEnum.BANNER_UPDATED_SUCCESSFULLY,
-    //     };
-    // }
-
     @Delete(':id')
     @Roles(UserRoleEnum.ADMIN)
     @ApiOperation({ summary: 'Delete a banner' })

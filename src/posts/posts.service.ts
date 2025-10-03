@@ -15,6 +15,7 @@ export class PostsService {
                 postTitle: dto.postTitle,
                 postContent: dto.postContent,
                 postAuthorId: authorId,
+                articleAuthorId: dto.articleAuthorId,
                 postStatus: dto.postStatus,
                 postCategoryId: dto.postCategoryId,
                 thumbnailUrl: dto.thumbnailUrl,
@@ -25,6 +26,7 @@ export class PostsService {
                     connect: dto.tagIds?.map((id) => ({ id })) || [],
                 },
                 postParentId: dto.postParentId || undefined,
+
             },
         });
     }
@@ -48,16 +50,17 @@ export class PostsService {
     }
 
     async findAll(query: PaginationQueryDto) {
-        const { page = 1, limit = 30, search, categoryId } = query;
+        const { page = 1, limit = 30, search, categoryId, authorId } = query;
 
         const isArticle = categoryId == "articles"
 
         const searchQuery = (search || isArticle) ? { contains: search || "Artigo", mode: 'insensitive' } : undefined;
-        
+
         const where: any = {
             postTitle: searchQuery,
             removed: false,
             postCategoryId: (!isArticle && categoryId) ? categoryId : undefined,
+            articleAuthorId: authorId || undefined,
         };
 
         const items = this.prisma.post.findMany({
@@ -69,6 +72,7 @@ export class PostsService {
                 postAuthor: true,
                 postCategory: true,
                 relatedTags: true,
+                articleAuthor: true,
             },
         });
 

@@ -59,6 +59,9 @@ model Post {
   postStatus    PostStatus
   commentCounts Int        @default(0)
 
+  articleAuthorId String
+  articleAuthor   Author @relation(fields: [articleAuthorId], references: [id])
+
   postParentId String?
   postParent   Post?   @relation("PostToParent", fields: [postParentId], references: [id])
   children     Post[]  @relation("PostToParent")
@@ -206,4 +209,14 @@ model ContactPage {
 model AboutPage {
   id      String @id @default(uuid())
   content Json
+}
+
+model Author {
+  id        String   @id @default(uuid())
+  name      String
+  photoUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  removed   Boolean  @default(false)
+  Post      Post[]
 }

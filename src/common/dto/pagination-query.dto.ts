@@ -28,4 +28,9 @@ export class PaginationQueryDto {
     @IsOptional()
     @IsString()
     categoryId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    authorId?: string;
 }
