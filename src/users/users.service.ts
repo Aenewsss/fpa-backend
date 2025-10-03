@@ -39,7 +39,7 @@ export class UsersService {
   async inviteUser(dto: InviteUserDto, currentUserRole: UserRoleEnum) {
     const { email, role } = dto;
 
-    if (currentUserRole == UserRoleEnum.ADMIN && role === UserRoleEnum.ADMIN)
+    if (currentUserRole != UserRoleEnum.ADMIN && role === UserRoleEnum.ADMIN)
       throw new ForbiddenException(ResponseMessageEnum.ADMIN_CANNOT_BE_INVITED);
 
     if (currentUserRole === UserRoleEnum.MAIN_EDITOR && role !== UserRoleEnum.EDITOR)
@@ -48,7 +48,7 @@ export class UsersService {
     const userExists = await this.prisma.user.findUnique({ where: { email } });
     if (userExists) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_EXISTS);
 
-    const alreadyInvited = await this.prisma.userInvited.findUnique({ where: { email, used: false, status: 'pending' } });
+    const alreadyInvited = await this.prisma.userInvited.findFirst({ where: { email, used: false, status: 'pending' } });
     if (alreadyInvited && !alreadyInvited.used) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_INVITED);
 
     const invitationToken = randomUUID();
@@ -70,10 +70,10 @@ export class UsersService {
     await this.mailService.sendInvite(email, url);
   }
 
-  async resendInvite(email: string, currentUserRole: UserRoleEnum) {
+  async resendInvite(userId: string, currentUserRole: UserRoleEnum) {
     // Não deixar ADMIN convidar outro ADMIN
     const invitedUser = await this.prisma.userInvited.findFirst({
-      where: { email, status: 'pending', used: false },
+      where: { id: userId, status: 'pending', used: false },
     });
 
     if (!invitedUser) {
@@ -81,7 +81,7 @@ export class UsersService {
     }
 
     // Verificações de regra de quem pode reenviar
-    if (currentUserRole === UserRoleEnum.ADMIN && invitedUser.role === UserRoleEnum.ADMIN) {
+    if (currentUserRole !== UserRoleEnum.ADMIN && invitedUser.role === UserRoleEnum.ADMIN) {
       throw new ForbiddenException(ResponseMessageEnum.ADMIN_CANNOT_BE_INVITED);
     }
 
@@ -89,23 +89,30 @@ export class UsersService {
       throw new ForbiddenException(ResponseMessageEnum.MAIN_EDITOR_CAN_ONLY_INVITE_EDITOR);
     }
 
+    // expires all previous invites
+    await this.prisma.userInvited.updateMany({
+      where: { status: 'pending', email: invitedUser.email },
+      data: { expiresAt: new Date(), status: 'expired' },
+    })
+
     // gera um novo token e nova expiração
     const invitationToken = randomUUID();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // +1h
 
-    await this.prisma.userInvited.update({
-      where: { id: invitedUser.id },
+    await this.prisma.userInvited.create({
       data: {
+        email: invitedUser.email,
         invitationToken,
         expiresAt,
+        role: invitedUser.role,
         status: 'pending',
         used: false,
-      },
+      }
     });
 
-    const url = `${process.env.INVITE_ACCEPT_URL}?email=${encodeURIComponent(email)}&invitationToken=${invitationToken}`;
-    await this.mailService.sendInvite(email, url);
+    const url = `${process.env.INVITE_ACCEPT_URL}?email=${encodeURIComponent(invitedUser.email)}&invitationToken=${invitationToken}`;
+    await this.mailService.sendInvite(invitedUser.email, url);
   }
 
   async createUser(input: CreateUserInput) {
@@ -166,6 +173,39 @@ export class UsersService {
         },
       }),
       this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      total,
+      page,
+      limit,
+      users,
+    };
+  }
+
+  async listUsersInvited(query: PaginationQueryDto) {
+    const { page = 1, limit = 10, search } = query;
+
+    const where: Prisma.UserInvitedWhereInput = {
+      ...(search && {
+        email: { contains: search, mode: 'insensitive' }
+      }),
+    };
+
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.userInvited.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { invitedAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+        },
+      }),
+      this.prisma.userInvited.count({ where }),
     ]);
 
     return {

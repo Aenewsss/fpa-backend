@@ -25,7 +25,7 @@ model User {
 
 model UserInvited {
   id              String    @id @default(uuid())
-  email           String    @unique
+  email           String
   invitationToken String    @unique
   status          String    @default("pending")
   invitedAt       DateTime  @default(now())

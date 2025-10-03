@@ -80,4 +80,15 @@ export class UsersController {
       message: ResponseMessageEnum.LIST_USERS_SUCCESSFULLY,
     };
   }
+
+  @Get('/invited')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+  @ApiOperation({ summary: 'List users invited with pagination and optional search' })
+  async listUsersInvited(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
+    const result = await this.usersService.listUsersInvited(query);
+    return {
+      data: result,
+      message: ResponseMessageEnum.LIST_USERS_SUCCESSFULLY,
+    };
+  }
 }
