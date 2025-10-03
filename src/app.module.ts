@@ -20,6 +20,7 @@ import { LiveModule } from './live/live.module';
 import { UsageTermsPageModule } from './usage-terms-page/usage-terms-page.module';
 import { ContactPageModule } from './contact-page/contact-page.module';
 import { AboutPageModule } from './about-page/about-page.module';
+import { PdfModule } from './pdf/pdf.module';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { AboutPageModule } from './about-page/about-page.module';
     LiveModule,
     UsageTermsPageModule,
     ContactPageModule,
-    AboutPageModule
+    AboutPageModule,
+    PdfModule,
   ],
   controllers: [AppController],
   providers: [AppService],

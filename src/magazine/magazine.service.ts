@@ -9,17 +9,17 @@ export class MagazineService {
         return this.prisma.magazine.findFirst()
     }
 
-    async createOrUpdate(pdfUrl: string) {
+    async createOrUpdate(pdfUrl: string, previewUrl: string) {
         const existingMagazine = await this.prisma.magazine.findFirst();
 
         if (existingMagazine) {
             return this.prisma.magazine.update({
                 where: { id: existingMagazine.id },
-                data: { pdfUrl },
+                data: { pdfUrl, previewUrl },
             });
         } else {
             return this.prisma.magazine.create({
-                data: { pdfUrl },
+                data: { pdfUrl, previewUrl },
             });
         }
     }

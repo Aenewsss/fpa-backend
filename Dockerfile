@@ -25,8 +25,12 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Instala o OpenSSL 1.1
-RUN apt-get update -y && apt-get install -y openssl
+# Instala OpenSSL e Poppler (necessário pro pdf2pic rodar `pdftoppm`)
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends \
+       openssl \
+       poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 # ARGs (recebidos durante o build)
 ARG DATABASE_URL

@@ -50,10 +50,14 @@ export class PostsService {
     async findAll(query: PaginationQueryDto) {
         const { page = 1, limit = 30, search, categoryId } = query;
 
+        const isArticle = categoryId == "articles"
+
+        const searchQuery = (search || isArticle) ? { contains: search || "Artigo", mode: 'insensitive' } : undefined;
+        
         const where: any = {
-            postTitle: search ? { contains: search, mode: 'insensitive' } : undefined,
+            postTitle: searchQuery,
             removed: false,
-            postCategoryId: categoryId ? categoryId : undefined,
+            postCategoryId: (!isArticle && categoryId) ? categoryId : undefined,
         };
 
         const items = this.prisma.post.findMany({
