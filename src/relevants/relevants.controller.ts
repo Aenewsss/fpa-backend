@@ -9,6 +9,7 @@ import { UploadService } from 'src/uploads/upload.service';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
+import { UpdateRelevantDto } from './dto/update-relevant.dto';
 
 @ApiTags('Relevants')
 @Controller('relevants')
@@ -86,13 +87,48 @@ export class RelevantsController {
         return { data: result, message: ResponseMessageEnum.RELEVANT_LISTED_SUCCESSFULLY }
     }
 
-    // @Patch(':id')
-    // @ApiOperation({ summary: 'Update a relevant' })
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @Roles(UserRoleEnum.ADMIN)
-    // update(@Param('id') id: string, @Body() dto: UpdateWebstoryDto) {
-    //     return this.service.update(id, dto);
-    // }
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update an existing relevant video' })
+    @ApiBody({
+        description: 'Update relevant data (optional new video and/or cover already uploaded to R2)',
+        schema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', example: 'Atualização do Fato em Foco' },
+                description: { type: 'string', example: 'Descrição atualizada do vídeo.' },
+                videoKey: { type: 'string', example: 'relevants/video/updated.mp4' },
+                coverKey: { type: 'string', example: 'relevants/cover/updated.jpg' },
+            },
+        },
+    })
+    async update(
+        @Param('id') id: string,
+        @Body() dto: UpdateRelevantDto,
+    ): Promise<StandardResponse> {
+        if (!dto || Object.keys(dto).length === 0) {
+            throw new Error(ResponseMessageEnum.INVALID_REQUEST_BODY);
+        }
+
+        // 🔗 Convert keys to full URLs (if provided)
+        if (dto.videoKey) {
+            dto['videoUrl'] = `${process.env.R2_PUBLIC_BASE_URL}/${dto.videoKey}`;
+        }
+        if (dto.coverKey) {
+            dto['coverImageUrl'] = `${process.env.R2_PUBLIC_BASE_URL}/${dto.coverKey}`;
+        }
+
+        const { videoKey, coverKey, ...rest } = dto;
+
+        const result = await this.service.update(id, { ...rest });
+
+        return {
+            data: result,
+            message: ResponseMessageEnum.RELEVANT_UPDATED_SUCCESSFULLY,
+        };
+    }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Soft delete a relevant' })
