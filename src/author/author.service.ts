@@ -34,4 +34,10 @@ export class AuthorService {
         });
     }
 
+    async update(id: string, data: any) {
+        return this.prisma.author.update({
+            where: { id },
+            data,
+        });
+    }
 }

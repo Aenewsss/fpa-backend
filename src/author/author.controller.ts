@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthorService } from './author.service';
 import { UploadService } from 'src/uploads/upload.service';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -11,6 +11,7 @@ import { StandardResponse } from 'src/common/interfaces/standard-response.interf
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { CreateAuthorDto } from './dto/create-author.dto';
+import { UpdateAuthorDto } from './dto/update-author.dto';
 
 @Controller('author')
 export class AuthorController {
@@ -53,13 +54,6 @@ export class AuthorController {
         const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.AUTHORS);
         dto.photoUrl = uploadedFile.url
 
-        // if (uploadedFile.duplicated) {
-        //     return {
-        //         data: uploadedFile,
-        //         message: ResponseMessageEnum.AUTHOR_ALREADY_EXISTS,
-        //     };
-        // }
-
         const result = await this.authorService.create({ ...dto });
 
         return {
@@ -88,6 +82,56 @@ export class AuthorController {
         return {
             data: result,
             message: ResponseMessageEnum.AUTHOR_DELETED_SUCCESSFULLY,
+        };
+    }
+
+    @Patch(':id')
+    @Roles(UserRoleEnum.ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    @UseInterceptors(
+        FileInterceptor('file', {
+            limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        }),
+    )
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        description: 'Atualizar parlamentar (opcionalmente com nova imagem)',
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+                name: {
+                    type: 'string',
+                    example: 'Maria da Silva',
+                },
+            },
+        },
+    })
+    @ApiOperation({ summary: 'Update an existing author' })
+    async update(
+        @Param('id') id: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body() dto: any,
+    ): Promise<StandardResponse> {
+        const author = await this.authorService.findOne(id);
+        if (!author) {
+            throw new NotFoundException('Author not found');
+        }
+
+        if (file) {
+            const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.AUTHORS);
+            dto.photoUrl = uploadedFile.url;
+        }
+
+        const updated = await this.authorService.update(id, dto);
+
+        return {
+            data: updated,
+            message: ResponseMessageEnum.AUTHOR_UPDATED_SUCCESSFULLY,
         };
     }
 }
