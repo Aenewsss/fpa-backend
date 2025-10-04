@@ -63,7 +63,7 @@ export class WebstoriesService {
     }
 
     async findOne(id: string) {
-        const item = await this.prisma.webstory.findUnique({ where: { id } });
+        const item = await this.prisma.webstory.findUnique({ where: { id }, include: { slides: true } });
         if (!item || item.removed) throw new NotFoundException('Webstory not found');
         return item;
     }

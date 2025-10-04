@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, Query, NotFoundException } from '@nestjs/common';
 import { WebstoriesService } from './webstories.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -110,13 +110,89 @@ export class WebstoriesController {
         return { data: result, message: ResponseMessageEnum.WEBSTORY_LISTED_SUCCESSFULLY }
     }
 
-    // @Patch(':id')
-    // @ApiOperation({ summary: 'Update a webstory' })
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @Roles(UserRoleEnum.ADMIN)
-    // update(@Param('id') id: string, @Body() dto: UpdateWebstoryDto) {
-    //     return this.service.update(id, dto);
-    // }
+    @Patch(':id')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update an existing webstory (title, description, slides, or featured flag)' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN)
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'slides', maxCount: 20 },
+        ]),
+    )
+    @ApiBody({
+        description: 'Atualizar uma webstory existente com novos slides ou metadados',
+        schema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', example: 'História do Agro (Atualizada)' },
+                description: { type: 'string', example: 'Agora com novos slides' },
+                isFeatured: { type: 'boolean', example: true },
+                'slideTexts[0]': {
+                    type: 'string',
+                    example: 'Texto atualizado do primeiro slide',
+                },
+                slides: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        format: 'binary',
+                    },
+                },
+            },
+        },
+    })
+    async update(
+        @Param('id') id: string,
+        @UploadedFiles() files: Record<string, Express.Multer.File[]> = {}, // ✅ make optional
+        @Body() dto: any
+    ): Promise<StandardResponse> {
+        const { title, description, isFeatured } = dto
+        const slidesFiles = files.slides ?? []
+
+        // Fetch existing webstory for merge
+        const existing = await this.service.findOne(id)
+        if (!existing) {
+            throw new NotFoundException('Webstory não encontrada.')
+        }
+
+        // Upload new slides if provided
+        let updatedSlides = existing.slides
+        if (slidesFiles.length > 0) {
+            const newSlides = await Promise.all(
+                slidesFiles.map(async (file, index) => {
+                    const uploaded = await this.uploadService.upload(file, `${BucketPrefixEnum.WEBSTORIES}${title || existing.title}`)
+                    return {
+                        imageUrl: uploaded.url,
+                        text: dto?.slideTexts ? dto?.slideTexts[index] : '',
+                        order: index,
+                        webstoryId: existing.id,
+                        id: existing.id
+                    }
+                })
+            )
+            updatedSlides = newSlides
+        } else if (dto?.slideTexts) {
+            // Update slide texts only if provided (without reuploading)
+            updatedSlides = existing.slides.map((slide, index) => ({
+                ...slide,
+                text: dto?.slideTexts?.[index] ?? slide.text,
+            }))
+        }
+
+        const result = await this.service.update(id, {
+            title: title ?? existing.title,
+            description: description ?? existing.description,
+            isFeatured: isFeatured ?? existing.isFeatured,
+            slides: updatedSlides,
+        })
+
+        return {
+            data: result,
+            message: ResponseMessageEnum.WEBSTORY_UPDATED_SUCCESSFULLY,
+        }
+    }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Soft delete a webstory' })
