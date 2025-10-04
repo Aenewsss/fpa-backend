@@ -55,16 +55,12 @@ export class CategoryController {
         },
     })
     async create(@Body() dto: CreateCategoryDto, @UploadedFile() file: Express.Multer.File): Promise<StandardResponse> {
-        const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.CATEGORIES);
-        dto.thumbnailUrl = uploadedFile.url
-        if(dto.isFeatured) dto.isFeatured = dto.isFeatured == "true"
-
-        if (uploadedFile.duplicated) {
-            return {
-                data: uploadedFile,
-                message: ResponseMessageEnum.CATEGORY_THUMBNAIL_ALREADY_EXISTS,
-            };
+        if (file) {
+            const uploadedFile = await this.uploadService.upload(file, BucketPrefixEnum.CATEGORIES);
+            dto.thumbnailUrl = uploadedFile.url
         }
+
+        if (dto.isFeatured) dto.isFeatured = dto.isFeatured == "true"
 
         const result = await this.categoryService.create(dto);
         return {
