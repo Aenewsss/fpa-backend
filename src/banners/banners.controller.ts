@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Patch, Delete, Param, Body, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 import { BannersService } from './banners.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
@@ -71,6 +71,60 @@ export class BannersController {
         return {
             data: result,
             message: ResponseMessageEnum.BANNER_CREATED_SUCCESSFULLY,
+        };
+    }
+
+    @Patch(':id')
+    @Roles(UserRoleEnum.ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    @UseInterceptors(
+        FileInterceptor('file', {
+            limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        }),
+    )
+    @ApiConsumes('multipart/form-data')
+    @ApiParam({ name: 'id', type: 'string', description: 'Banner ID' })
+    @ApiBody({
+        description: 'Update an existing banner (file optional)',
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+                text: {
+                    type: 'string',
+                    example: 'Novo texto do banner!',
+                },
+                link: {
+                    type: 'string',
+                    example: 'https://seusite.com.br/novo-link',
+                },
+            },
+        },
+    })
+    @ApiOperation({ summary: 'Update an existing banner (file optional)' })
+    async update(
+        @Param('id') id: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body() dto: UpdateBannerDto,
+    ): Promise<StandardResponse> {
+        // Se um novo arquivo foi enviado, faz upload e atualiza a URL
+        if (file) {
+            const uploadedFile = await this.uploadService.upload(
+                file,
+                BucketPrefixEnum.BANNERS,
+            );
+            dto.imageUrl = uploadedFile.url;
+        }
+
+        const result = await this.bannersService.update(id, dto);
+
+        return {
+            data: result,
+            message: ResponseMessageEnum.BANNER_UPDATED_SUCCESSFULLY,
         };
     }
 
