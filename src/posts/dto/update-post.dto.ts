@@ -5,8 +5,9 @@ import {
     IsEnum,
     IsBoolean,
     IsArray,
+    IsUUID,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PostStatus } from '@prisma/client';
 
 export class UpdatePostDto {
@@ -24,6 +25,11 @@ export class UpdatePostDto {
     @IsEnum(PostStatus)
     @ApiPropertyOptional({ enum: PostStatus })
     postStatus?: PostStatus;
+
+    @ApiPropertyOptional()
+    @IsUUID()
+    @IsOptional()
+    articleAuthorId?: string;
 
     @IsOptional()
     @IsString()

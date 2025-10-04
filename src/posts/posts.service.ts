@@ -32,21 +32,41 @@ export class PostsService {
     }
 
     async update(id: string, dto: UpdatePostDto) {
-        const post = await this.prisma.post.findUnique({ where: { id } });
-        if (!post) throw new NotFoundException(ResponseMessageEnum.POST_NOT_FOUND);
+        const existingPost = await this.prisma.post.findUnique({ where: { id } })
+        if (!existingPost) throw new NotFoundException(ResponseMessageEnum.POST_NOT_FOUND)
+
+        // 🔄 Keep old thumbnail if a new one isn’t provided
+        const thumbnailUrl = dto.thumbnailUrl ?? existingPost.thumbnailUrl
+
+        // 🔄 Merge tags only if explicitly provided
+        const relatedTags =
+            dto.tagIds && dto.tagIds.length > 0
+                ? {
+                    set: [], // clear old tags
+                    connect: dto.tagIds.map((id) => ({ id })),
+                }
+                : undefined
 
         return this.prisma.post.update({
             where: { id },
             data: {
-                ...dto,
-                relatedTags: dto.tagIds
-                    ? {
-                        set: [], // limpa as tags antigas
-                        connect: dto.tagIds.map((id) => ({ id })),
-                    }
-                    : undefined,
+                postTitle: dto.postTitle ?? existingPost.postTitle,
+                postContent: dto.postContent ?? existingPost.postContent,
+                postStatus: dto.postStatus ?? existingPost.postStatus,
+                postCategoryId: dto.postCategoryId ?? existingPost.postCategoryId,
+                slug: dto.slug ?? existingPost.slug,
+                summary: dto.summary ?? existingPost.summary,
+                isFeatured:
+                    typeof dto.isFeatured === 'boolean'
+                        ? dto.isFeatured
+                        : existingPost.isFeatured,
+                thumbnailUrl,
+                relatedTags,
+                // keep author if not changed
+                articleAuthorId: dto.articleAuthorId ?? existingPost.articleAuthorId,
+                updatedAt: new Date(),
             },
-        });
+        })
     }
 
     async findAll(query: PaginationQueryDto) {

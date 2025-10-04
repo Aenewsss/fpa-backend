@@ -139,6 +139,87 @@ export class PostsController {
         };
     }
 
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update an existing post' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR, UserRoleEnum.EDITOR)
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'files', maxCount: 5 },
+            { name: 'thumbnailFile', maxCount: 1 },
+        ])
+    )
+    @ApiBody({
+        description: 'Atualizar post existente',
+        schema: {
+            type: 'object',
+            properties: {
+                postTitle: { type: 'string' },
+                postContent: { type: 'string' },
+                postStatus: { type: 'string', enum: Object.values(PostStatus) },
+                postCategoryId: { type: 'string', format: 'uuid' },
+                relatedTags: {
+                    type: 'array',
+                    items: { type: 'string', format: 'uuid' },
+                },
+                slug: { type: 'string' },
+                summary: { type: 'string' },
+                isFeatured: { type: 'string' },
+                viewCount: { type: 'integer' },
+                tagIds: {
+                    type: 'array',
+                    items: { type: 'string', format: 'uuid' },
+                },
+            },
+        },
+    })
+    async update(
+        @Param('id') id: string,
+        @UserId() userId: string,
+        @UploadedFiles() files: { thumbnailFile?: Express.Multer.File[], files?: Express.Multer.File[] },
+        @Body() dto: any,
+    ): Promise<StandardResponse> {
+        let updatedThumbnailUrl: string | undefined
+        let postContent: object
+
+        // ✅ Upload thumbnail only if provided
+        if (files.thumbnailFile && files.thumbnailFile.length > 0) {
+            const uploadedThumbnail = await this.uploadsService.upload(
+                files.thumbnailFile[0],
+                `${BucketPrefixEnum.POSTS}thumbnail/${dto.slug}`,
+            )
+            updatedThumbnailUrl = uploadedThumbnail.url
+            dto.thumbnailUrl = updatedThumbnailUrl
+        }
+
+        // ✅ Upload inline content files if provided
+        if (files.files && files.files.length > 0) {
+            const uploads = await Promise.all(
+                files.files.map(async (file) => ({
+                    url: (await this.uploadsService.upload(file, `${BucketPrefixEnum.POSTS}${dto.slug}`)).url,
+                    filename: file.originalname.split('.').slice(0, -1).join('.'),
+                })),
+            )
+
+            postContent = this.replaceImageSrcsByFilename(JSON.parse(dto.postContent), uploads)
+        } else {
+            // keep content unchanged or update with JSON provided
+            postContent = JSON.parse(dto.postContent)
+        }
+
+        dto.postContent = postContent
+        dto.isFeatured = dto.isFeatured === 'true'
+
+        const result = await this.postsService.update(id, dto)
+
+        return {
+            data: result,
+            message: ResponseMessageEnum.POST_UPDATED_SUCCESSFULLY,
+        }
+    }
+
     @Get()
     @ApiOperation({ summary: 'List all posts with pagination' })
     async findAll(@Query() query: PaginationQueryDto): Promise<StandardResponse> {
@@ -176,22 +257,6 @@ export class PostsController {
         return {
             data: result,
             message: ResponseMessageEnum.POST_FOUND_SUCCESSFULLY,
-        };
-    }
-
-    @Patch(':id')
-    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
-    @ApiOperation({ summary: 'Update post by ID' })
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    async update(
-        @Param('id') id: string,
-        @Body() dto: UpdatePostDto
-    ): Promise<StandardResponse> {
-        const result = await this.postsService.update(id, dto);
-        return {
-            data: result,
-            message: ResponseMessageEnum.POST_UPDATED_SUCCESSFULLY,
         };
     }
 
