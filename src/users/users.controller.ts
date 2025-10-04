@@ -5,12 +5,13 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -21,6 +22,7 @@ import { UserRole } from 'src/auth/decorators/user-role.decorator';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -89,6 +91,37 @@ export class UsersController {
     return {
       data: result,
       message: ResponseMessageEnum.LIST_USERS_SUCCESSFULLY,
+    };
+  }
+
+  @Patch(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an existing user' })
+  @ApiBody({
+    type: UpdateUserDto,
+    description: 'Update user details (email, firstName, lastName, role)',
+    examples: {
+      update: {
+        summary: 'Example payload',
+        value: {
+          email: 'user@fpa.org.br',
+          firstName: 'Maria',
+          lastName: 'Souza',
+          role: 'EDITOR',
+        },
+      },
+    },
+  })
+  async updateUser(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ): Promise<StandardResponse> {
+    const result = await this.usersService.updateUser(id, dto);
+    return {
+      data: result,
+      message: ResponseMessageEnum.USER_UPDATED_SUCCESSFULLY,
     };
   }
 }

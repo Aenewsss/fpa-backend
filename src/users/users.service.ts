@@ -10,6 +10,7 @@ import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { CreateUserInput } from './input/create-user-invite.input';
 import { Prisma, Role } from '@prisma/client';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -214,5 +215,17 @@ export class UsersService {
       limit,
       users,
     };
+  }
+
+  async updateUser(id: string, dto: UpdateUserDto) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    return await this.prisma.user.update({
+      where: { id },
+      data: {
+        ...dto,
+      },
+    });
   }
 }
