@@ -81,7 +81,8 @@ export class UploadService {
                         Key: key,
                         Body: file.buffer,
                         ContentType: file.mimetype,
-                        CacheControl: 'public, max-age=31536000', // cache por 1 ano
+                        Expires: new Date(Date.now() + 31536000 * 1000), // optional, for some CDNs
+                        CacheControl: "public, max-age=31536000, immutable", // 1-year cache
                     }),
                 );
 
