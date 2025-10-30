@@ -11,6 +11,7 @@ import { CreateUserInput } from './input/create-user-invite.input';
 import { Prisma, Role } from '@prisma/client';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -137,11 +138,11 @@ export class UsersService {
 
     if (!user || user.removed) throw new NotFoundException(ResponseMessageEnum.USER_NOT_FOUND);
 
-    return this.prisma.user.update({
+    // @ts-ignore
+    await this.prisma.userInvited.delete({ where: { email: user.email } });
+
+    return this.prisma.user.delete({
       where: { id: userId },
-      data: {
-        removed: true,
-      },
     });
   }
 
@@ -227,5 +228,38 @@ export class UsersService {
         ...dto,
       },
     });
+  }
+
+  async resetPasswordImmediate(userId: string, currentUserRole: UserRoleEnum): Promise<string> {
+    const user = await this.prisma.userInvited.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(ResponseMessageEnum.USER_NOT_FOUND);
+    }
+
+    // MAIN_EDITOR não pode resetar ADMIN
+    if (currentUserRole === UserRoleEnum.MAIN_EDITOR && user.role === UserRoleEnum.ADMIN) {
+      throw new ForbiddenException(ResponseMessageEnum.PASSWORD_RESET_NOT_ALLOWED);
+    }
+
+    const token = randomUUID();
+
+    const hashedPassword = await bcrypt.hash(token, 10);
+
+    await this.prisma.user.update({
+      where: { email: user.email },
+      data: {
+        password: hashedPassword,
+      }
+    });
+
+    // Monta URL do front para redefinição
+    const baseUrl = process.env.FRONT_BASE_URL
+
+    const url = `${baseUrl}/login`;
+
+    // Envia e-mail
+    await this.mailService.sendPasswordReset(user.email, url, token);
+
+    return token
   }
 }

@@ -124,4 +124,18 @@ export class UsersController {
       message: ResponseMessageEnum.USER_UPDATED_SUCCESSFULLY,
     };
   }
+
+  @Post('reset-password/:userId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+  @ApiOperation({ summary: 'Generate and email a new random password for a user' })
+  async resetPassword(
+    @Param('userId') userId: string,
+    @UserRole() currentUserRole: UserRoleEnum,
+  ): Promise<StandardResponse> {
+    const newPassword = await this.usersService.resetPasswordImmediate(userId, currentUserRole);
+    return {
+      data: newPassword,
+      message: ResponseMessageEnum.PASSWORD_RESET_LINK_SENT,
+    };
+  }
 }

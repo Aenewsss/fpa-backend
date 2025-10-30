@@ -249,4 +249,79 @@ export class MailService {
 
         this.logger.log(`Todos os ${batches.length} lotes enviados com sucesso.`);
     }
+
+    async sendPasswordReset(to: string, loginUrl: string, newPassword: string) {
+        const html = `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nova senha temporária</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f8; }
+    .wrapper { width:100%; padding:24px 0; }
+    .container { max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    .header { padding:20px 28px; background:#1C9658; color:#fff; font-weight:700; font-size:18px; }
+    .content { padding:28px; color:#222; }
+    .p { margin:0 0 16px; line-height:1.55; }
+    .btn { display:inline-block; background:#1C9658; color:#fff !important; text-decoration:none; padding:12px 18px; border-radius:10px; font-weight:600; }
+    .url { word-break: break-all; color:#1C9658; }
+    .box { background:#f3f4f6; border:1px solid #e5e7eb; padding:12px 14px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .muted { color:#6b7280; font-size:12px; }
+    .footer { padding:16px 28px; color:#6b7280; font-size:12px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">Sua nova senha temporária</div>
+      <div class="content">
+        <p class="p">Olá,</p>
+        <p class="p">Geramos uma <strong>nova senha temporária</strong> para sua conta. Use-a para fazer login e, em seguida, altere sua senha nas configurações da conta.</p>
+
+        <p class="p"><strong>Senha temporária:</strong></p>
+        <p class="box">${newPassword}</p>
+
+        <p class="p">
+          <a class="btn" href="${loginUrl}" target="_blank" rel="noopener noreferrer">Acessar login</a>
+        </p>
+
+        <p class="p">Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+        <p class="p url">${loginUrl}</p>
+
+        <p class="p muted">Por segurança, recomendamos alterar sua senha após o primeiro acesso.</p>
+      </div>
+      <div class="footer">© ${new Date().getFullYear()} — Equipe</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        const emailData = {
+            html,
+            text: `Foi gerada uma nova senha temporária para sua conta.\n\nSenha temporária: ${newPassword}\n\nAcesse o login: ${loginUrl}\n\nRecomendamos alterar a senha após o primeiro acesso.`,
+            to: [{ email: to }],
+            from: {
+                name: this.senderName,
+                email: this.senderEmail,
+            },
+            subject: 'Sua nova senha temporária',
+        };
+
+        return new Promise<void>((resolve, reject) => {
+            sendpulse.smtpSendMail(
+                (response: any) => {
+                    if (response?.result) {
+                        this.logger.log(`Nova senha temporária enviada para ${to}`);
+                        resolve();
+                    } else {
+                        this.logger.error(`Erro ao enviar nova senha temporária para ${to}`, response);
+                        reject(response);
+                    }
+                },
+                emailData,
+            );
+        });
+    }
 }
