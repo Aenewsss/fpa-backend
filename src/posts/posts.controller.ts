@@ -8,15 +8,11 @@ import { UserRoleEnum } from 'src/common/enums/role.enum';
 import { StandardResponse } from 'src/common/interfaces/standard-response.interface';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { UserId } from 'src/auth/decorators/user-id.decorator';
-import { CreatePostDto } from './dto/create-post.dto';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { AnyFilesInterceptor, FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/uploads/upload.service';
 import { BucketPrefixEnum } from 'src/common/enums/bucket-prefix.enum';
 import { PostStatus } from '@prisma/client';
-import { FileSizeInterceptor } from 'src/common/interceptors/file-size.interceptor';
-import { randomUUID } from 'crypto';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -60,6 +56,19 @@ export class PostsController {
         return {
             data: result,
             message: ResponseMessageEnum.POSTS_LISTED_SUCCESSFULLY,
+        };
+    }
+
+    @Get('removed')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Listar matérias removidas (soft delete)' })
+    async listRemovedPosts(): Promise<StandardResponse> {
+        const data = await this.postsService.findRemoved();
+        return {
+            data,
+            message: ResponseMessageEnum.LIST_REMOVED_POSTS_SUCCESSFULLY,
         };
     }
 
@@ -285,5 +294,18 @@ export class PostsController {
     @Post(':id/view')
     async incrementView(@Param('id') id: string): Promise<void> {
         await this.postsService.increment(id);
+    }
+
+    @Post(':id/restore')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MAIN_EDITOR)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Restaurar uma matéria removida' })
+    async restorePost(@Param('id') id: string): Promise<StandardResponse> {
+        const data = await this.postsService.restore(id);
+        return {
+            data,
+            message: ResponseMessageEnum.POST_RESTORED_SUCCESSFULLY,
+        };
     }
 }

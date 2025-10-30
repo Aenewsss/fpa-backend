@@ -235,4 +235,38 @@ export class PostsService {
 
         return posts;
     }
+
+    async findRemoved() {
+        const posts = await this.prisma.post.findMany({
+            where: { removed: true },
+            orderBy: { updatedAt: 'desc' },
+            include: {
+                postAuthor: true,
+                postCategory: true,
+                relatedTags: true,
+            },
+        });
+
+        return posts;
+    }
+
+    /**
+     * Restaura um post removido (soft delete) para ativo novamente.
+     */
+    async restore(id: string) {
+        const post = await this.prisma.post.findUnique({
+            where: { id },
+        });
+
+        if (!post || !post.removed) {
+            throw new NotFoundException(ResponseMessageEnum.POST_NOT_FOUND);
+        }
+
+        return this.prisma.post.update({
+            where: { id },
+            data: {
+                removed: false,
+            },
+        });
+    }
 }
