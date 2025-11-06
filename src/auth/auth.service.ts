@@ -186,8 +186,8 @@ export class AuthService {
       },
     });
 
-    if (!invite || invite.expiresAt < new Date()) throw new BadRequestException(ResponseMessageEnum.INVALID_OR_EXPIRED_INVITATION_TOKEN);
-    if (invite.used || invite.status === 'accepted') throw new BadRequestException(ResponseMessageEnum.INVITE_ALREADY_USED);
+    // if (!invite || invite.expiresAt < new Date()) throw new BadRequestException(ResponseMessageEnum.INVALID_OR_EXPIRED_INVITATION_TOKEN);
+    // if (invite.used || invite.status === 'accepted') throw new BadRequestException(ResponseMessageEnum.INVITE_ALREADY_USED);
 
     return invite
   }
