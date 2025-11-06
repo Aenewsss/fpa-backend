@@ -262,4 +262,30 @@ export class UsersService {
 
     return token
   }
+
+  async deleteUser(userId: string) {
+    // Step 1 - Ensure the user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(ResponseMessageEnum.USER_NOT_FOUND);
+    }
+
+    // Step 2 - Delete or cascade depending on your schema
+    try {
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      return {
+        success: true,
+        message: `User ${user.email} successfully deleted.`,
+      };
+    } catch (error) {
+      console.error('[deleteUser] Error deleting user:', error);
+      throw new Error('Failed to delete user. Please try again.');
+    }
+  }
 }

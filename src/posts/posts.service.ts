@@ -70,7 +70,7 @@ export class PostsService {
     }
 
     async findAll(query: PaginationQueryDto) {
-        const { page = 1, limit = 30, search, categoryId, authorId } = query;
+        const { page = 1, limit = 30, search, categoryId, authorId, currentPostId } = query;
 
         const isArticle = categoryId == "articles"
 
@@ -81,6 +81,7 @@ export class PostsService {
             removed: false,
             postCategoryId: (!isArticle && categoryId) ? categoryId : undefined,
             articleAuthorId: authorId || undefined,
+            NOT: currentPostId ? { id: currentPostId } : undefined,
         };
 
         const items = this.prisma.post.findMany({

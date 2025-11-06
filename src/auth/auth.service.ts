@@ -127,26 +127,56 @@ export class AuthService {
     if (existingUser) throw new BadRequestException(ResponseMessageEnum.USER_ALREADY_EXISTS);
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    try {
+      await this.usersService.createUser({
+        email: userInvited.email,
+        password: hashedPassword,
+        role: userInvited.role as UserRoleEnum,
+        firstName,
+        lastName,
+        mustChangePassword: false
+      });
 
-    await this.usersService.createUser({
-      email: userInvited.email,
-      password: hashedPassword,
-      role: userInvited.role as UserRoleEnum,
-      firstName,
-      lastName,
-      mustChangePassword: false
-    });
+      await this.prisma.userInvited.update({
+        where: { invitationToken },
+        data: {
+          used: true,
+          status: 'accepted',
+          acceptedAt: new Date()
+        },
+      });
 
-    await this.prisma.userInvited.update({
-      where: { invitationToken },
-      data: {
-        used: true,
-        status: 'accepted',
-        acceptedAt: new Date()
-      },
-    });
+      return await this.login(userInvited.email, password)
+    } catch (error) {
+      console.error("[acceptInvite] Error during invite acceptance:", error);
 
-    return await this.login(userInvited.email, hashedPassword)
+      // 🧹 Fallback cleanup
+      try {
+        // Remove user if partially created
+        const found = await this.usersService.findByEmail(userInvited.email);
+        if (found) {
+          await this.usersService.deleteUser(found.id);
+          console.warn(`[acceptInvite] User ${userInvited.email} removed after failure`);
+        }
+
+        // Reset the invite so it can be used again
+        await this.prisma.userInvited.updateMany({
+          where: { invitationToken },
+          data: {
+            used: false,
+            status: "pending",
+            acceptedAt: null,
+          },
+        });
+        console.warn(`[acceptInvite] Invite ${invitationToken} reset for retry`);
+      } catch (cleanupErr) {
+        console.error("[acceptInvite] Error during fallback cleanup:", cleanupErr);
+      }
+
+      throw new BadRequestException(
+        "Erro ao aceitar convite. O processo foi revertido. Tente novamente."
+      );
+    }
   }
 
   private async checkInvitationToken(invitationToken: string) {

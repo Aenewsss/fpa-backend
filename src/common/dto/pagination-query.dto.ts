@@ -33,4 +33,9 @@ export class PaginationQueryDto {
     @IsOptional()
     @IsString()
     authorId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    currentPostId?: string;
 }
