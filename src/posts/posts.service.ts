@@ -81,7 +81,7 @@ export class PostsService {
             removed: false,
             postCategoryId: (!isArticle && categoryId) ? categoryId : undefined,
             articleAuthorId: authorId || undefined,
-            NOT: currentPostId ? { id: currentPostId } : undefined,
+            NOT: currentPostId ? { id: currentPostId, postStatus: 'removed' } : { postStatus: 'removed' },
         };
 
         const items = this.prisma.post.findMany({
