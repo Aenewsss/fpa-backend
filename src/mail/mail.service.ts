@@ -19,6 +19,7 @@ export class MailService {
             (token) => {
                 if (token) {
                     this.logger.log('SendPulse authenticated successfully');
+                    this.logger.log(`senderEmail: ${this.senderEmail}, senderName: ${this.senderName}`);
                 } else {
                     this.logger.error('SendPulse authentication failed');
                 }

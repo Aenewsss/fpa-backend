@@ -51,7 +51,7 @@ export class UsersService {
     if (userExists) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_EXISTS);
 
     const alreadyInvited = await this.prisma.userInvited.findFirst({ where: { email, used: false, status: 'pending' } });
-    if (alreadyInvited && !alreadyInvited.used) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_INVITED);
+    // if (alreadyInvited && !alreadyInvited.used) throw new ConflictException(ResponseMessageEnum.USER_ALREADY_INVITED);
 
     const invitationToken = randomUUID();
 
