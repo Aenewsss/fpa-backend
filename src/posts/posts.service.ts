@@ -4,31 +4,31 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { ResponseMessageEnum } from 'src/common/enums/response-message.enum';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreatePostDto, authorId: string) {
-        return this.prisma.post.create({
-            data: {
-                postTitle: dto.postTitle,
-                postContent: dto.postContent,
-                postAuthorId: authorId,
-                articleAuthorId: dto.articleAuthorId,
-                postStatus: dto.postStatus,
-                postCategoryId: dto.postCategoryId,
-                thumbnailUrl: dto.thumbnailUrl,
-                slug: dto.slug,
-                summary: dto.summary,
-                isFeatured: dto.isFeatured ?? false,
-                relatedTags: {
-                    connect: dto.tagIds?.map((id) => ({ id })) || [],
-                },
-                postParentId: dto.postParentId || undefined,
-
+        const data = Prisma.validator<Prisma.PostUncheckedCreateInput>()({
+            postTitle: dto.postTitle,
+            postContent: dto.postContent,
+            postAuthorId: authorId,
+            articleAuthorId: dto.articleAuthorId,
+            postStatus: dto.postStatus,
+            postCategoryId: dto.postCategoryId,
+            thumbnailUrl: dto.thumbnailUrl,
+            slug: dto.slug,
+            summary: dto.summary,
+            isFeatured: dto.isFeatured ?? false,
+            relatedTags: {
+                connect: dto.tagIds?.map((id) => ({ id })) || [],
             },
+            postParentId: dto.postParentId || undefined,
         });
+
+        return this.prisma.post.create({ data });
     }
 
     async update(id: string, dto: UpdatePostDto) {

@@ -54,13 +54,13 @@ model Post {
   postTitle     String
   postContent   Json
   postDate      DateTime   @default(now())
-  postAuthorId  String
-  postAuthor    User       @relation(fields: [postAuthorId], references: [id])
+  postAuthorId  String?
+  postAuthor    User?      @relation(fields: [postAuthorId], references: [id])
   postStatus    PostStatus
   commentCounts Int        @default(0)
 
-  articleAuthorId String
-  articleAuthor   Author @relation(fields: [articleAuthorId], references: [id])
+  articleAuthorId String?
+  articleAuthor   Author? @relation(fields: [articleAuthorId], references: [id])
 
   postParentId String?
   postParent   Post?   @relation("PostToParent", fields: [postParentId], references: [id])

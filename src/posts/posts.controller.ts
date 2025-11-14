@@ -141,6 +141,7 @@ export class PostsController {
         dto.postContent = postContent
         dto.isFeatured = dto.isFeatured === 'true'
 
+        console.log('line 144:',userId)
         const result = await this.postsService.create(dto, userId);
         return {
             data: result,

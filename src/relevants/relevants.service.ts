@@ -45,7 +45,7 @@ export class RelevantsService {
             where: filters,
             skip,
             take: limit,
-            orderBy: { createdAt: 'desc' },
+            orderBy: { order: 'desc' },
         });
 
         return items
@@ -69,35 +69,50 @@ export class RelevantsService {
         });
     }
 
-    async reorder(id: string, newOrder: number) {
-        const relevant = await this.findOne(id);
-        const currentOrder = relevant.order;
+    async reorder(id: string, newOrderInput: number | string) {
+        let newOrder = Number(newOrderInput);
+        if (isNaN(newOrder)) throw new Error(`Invalid newOrder value: ${newOrderInput}`);
+        if (newOrder < 0) newOrder = 0;
 
-        if (currentOrder === newOrder) return relevant;
-
-        const isMovingDown = newOrder > currentOrder;
-
-        // Atualiza os relevants entre a posição atual e a nova
-        await this.prisma.relevant.updateMany({
-            where: {
-                removed: false,
-                id: { not: id },
-                order: {
-                    gte: isMovingDown ? Number(currentOrder) + 1 : Number(newOrder),
-                    lte: isMovingDown ? Number(newOrder) : Number(currentOrder) - 1,
-                },
-            },
-            data: {
-                order: {
-                    increment: isMovingDown ? -1 : 1,
-                },
-            },
+        const relevants = await this.prisma.relevant.findMany({
+            where: { removed: false },
+            orderBy: { order: 'asc' },
         });
 
-        // Atualiza o relevant desejado
-        return this.prisma.relevant.update({
-            where: { id },
-            data: { order: Number(newOrder) },
-        });
+        if (relevants.length === 0) {
+            throw new Error('No relevants found to reorder.');
+        }
+
+        // Encontra o item a ser movido
+        const currentIndex = relevants.findIndex((w) => w.id === id);
+        if (currentIndex === -1) throw new Error(`Webstory with id ${id} not found.`);
+
+        // Remove o item atual
+        const [movedItem] = relevants.splice(currentIndex, 1);
+
+        // Ajusta newOrder se for maior que o total
+        if (newOrder >= relevants.length) newOrder = relevants.length;
+
+        // Insere o item na nova posição
+        relevants.splice(newOrder, 0, movedItem);
+
+        // Reatribui todos os índices em ordem
+        const reordered = relevants.map((w, index) => ({
+            id: w.id,
+            order: index,
+        }));
+
+        // Atualiza todos no banco via transação
+        await this.prisma.$transaction(
+            reordered.map((w) =>
+                this.prisma.relevant.update({
+                    where: { id: w.id },
+                    data: { order: w.order },
+                }),
+            ),
+        );
+
+        // Retorna o item movido atualizado
+        return this.prisma.webstory.findUnique({ where: { id } });
     }
 }
