@@ -37,7 +37,7 @@ export class CategoryService {
                 : {removed: false},
             skip,
             take: limit,
-            orderBy: { createdAt: 'desc' },
+            orderBy: { name: 'desc' },
         })
 
         return items

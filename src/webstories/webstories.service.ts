@@ -52,7 +52,7 @@ export class WebstoriesService {
             where: filters,
             skip,
             take: limit,
-            orderBy: [{ createdAt: 'desc' }, { isFeatured: 'desc' }],
+            orderBy: [{ order: 'asc' }, { isFeatured: 'desc' }],
             include: {
                 slides: true
             }
@@ -101,35 +101,50 @@ export class WebstoriesService {
         });
     }
 
-    async reorder(id: string, newOrder: number) {
-        const webstory = await this.findOne(id);
-        const currentOrder = webstory.order;
+    async reorder(id: string, newOrderInput: number | string) {
+        let newOrder = Number(newOrderInput);
+        if (isNaN(newOrder)) throw new Error(`Invalid newOrder value: ${newOrderInput}`);
+        if (newOrder < 0) newOrder = 0;
 
-        if (currentOrder === newOrder) return webstory;
-
-        const isMovingDown = newOrder > currentOrder;
-
-        // Atualiza os webstorys entre a posição atual e a nova
-        await this.prisma.webstory.updateMany({
-            where: {
-                removed: false,
-                id: { not: id },
-                order: {
-                    gte: isMovingDown ? Number(currentOrder) + 1 : Number(newOrder),
-                    lte: isMovingDown ? Number(newOrder) : Number(currentOrder) - 1,
-                },
-            },
-            data: {
-                order: {
-                    increment: isMovingDown ? -1 : 1,
-                },
-            },
+        const webstories = await this.prisma.webstory.findMany({
+            where: { removed: false },
+            orderBy: { order: 'asc' },
         });
 
-        // Atualiza o webstory desejado
-        return this.prisma.webstory.update({
-            where: { id },
-            data: { order: Number(newOrder) },
-        });
+        if (webstories.length === 0) {
+            throw new Error('No webstories found to reorder.');
+        }
+
+        // Encontra o item a ser movido
+        const currentIndex = webstories.findIndex((w) => w.id === id);
+        if (currentIndex === -1) throw new Error(`Webstory with id ${id} not found.`);
+
+        // Remove o item atual
+        const [movedItem] = webstories.splice(currentIndex, 1);
+
+        // Ajusta newOrder se for maior que o total
+        if (newOrder >= webstories.length) newOrder = webstories.length;
+
+        // Insere o item na nova posição
+        webstories.splice(newOrder, 0, movedItem);
+
+        // Reatribui todos os índices em ordem
+        const reordered = webstories.map((w, index) => ({
+            id: w.id,
+            order: index,
+        }));
+
+        // Atualiza todos no banco via transação
+        await this.prisma.$transaction(
+            reordered.map((w) =>
+                this.prisma.webstory.update({
+                    where: { id: w.id },
+                    data: { order: w.order },
+                }),
+            ),
+        );
+
+        // Retorna o item movido atualizado
+        return this.prisma.webstory.findUnique({ where: { id } });
     }
 }
