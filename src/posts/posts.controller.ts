@@ -95,6 +95,7 @@ export class PostsController {
                 postStatus: { type: 'string', enum: Object.values(PostStatus) },
                 postParentId: { type: 'string', format: 'uuid' },
                 postCategoryId: { type: 'string', format: 'uuid' },
+                postArticleAuthorId: { type: 'string', format: 'uuid' },
                 relatedTags: {
                     type: 'array',
                     items: { type: 'string', format: 'uuid' },
@@ -140,6 +141,11 @@ export class PostsController {
 
         dto.postContent = postContent
         dto.isFeatured = dto.isFeatured === 'true'
+
+        if(dto.articleAuthorId) {
+            dto.isArticle = true
+            dto.postCategoryId = 5
+        }
 
         console.log('line 144:',userId)
         const result = await this.postsService.create(dto, userId);
